@@ -32,9 +32,29 @@ onMounted(() => {
     .then((data) => (balance.value = data))
     .catch(() => (balanceFailed.value = true))
 
-  me.getActiveApplications().then((data) => (applications.value = data))
-  me.getAlerts().then((data) => (alerts.value = data))
+  // Every section catches its own failure. Two of these handlers are not built yet (Phase 3), and a
+  // section whose call fails must show its own empty or error state rather than leaving a skeleton
+  // spinning for ever -- which is what an uncaught rejection here would do.
+  me.getActiveApplications()
+    .then((data) => (applications.value = data))
+    .catch(() => (applications.value = []))
+
+  me.getAlerts()
+    .then((data) => (alerts.value = data))
+    .catch(() => (alerts.value = []))
 })
+
+/** The identity strip, with only the parts the record actually has. */
+const identityLine = (member) => {
+  const parts = []
+  if (member.pfNumber) parts.push(`PF ${member.pfNumber}`)
+  if (member.pernNumber) parts.push(`PERN ${member.pernNumber}`)
+  if (member.uanNumber) parts.push(`UAN ${member.uanNumber}`)
+  if (member.unitCode) {
+    parts.push(member.location ? `Unit ${member.unitCode}, ${member.location}` : `Unit ${member.unitCode}`)
+  }
+  return parts.join(' · ')
+}
 
 const greeting = () => {
   const hour = new Date().getHours()
@@ -66,9 +86,10 @@ const MONTHS = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', '
       </div>
       <div v-else class="h-8 w-64 animate-pulse rounded-md bg-surface-deep" />
 
+      <!-- Assembled from whatever is on record. SAP does not always carry a unit code or a location,
+           and an absent one used to render a dangling "Unit" with nothing after it. -->
       <p v-if="identity" class="mt-1 font-mono text-xs text-ink-faint">
-        PF {{ identity.pfNumber }} · PERN {{ identity.pernNumber }} · UAN {{ identity.uanNumber }} ·
-        Unit {{ identity.unitCode }}<template v-if="identity.location">, {{ identity.location }}</template>
+        {{ identityLine(identity) }}
       </p>
     </section>
 
@@ -128,8 +149,9 @@ const MONTHS = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', '
       <div v-else class="mt-2 h-14 w-72 animate-pulse rounded-md bg-surface-deep" />
     </section>
 
-    <!-- Three buckets -->
-    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Three buckets. Hidden entirely when the balance failed: they are the same figure broken down,
+         so three skeletons under a visible balance error read as the page being half-broken. -->
+    <section v-if="!balanceFailed" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <template v-if="balance">
         <BalanceBucketCard
           v-for="bucket in buckets"
@@ -140,7 +162,7 @@ const MONTHS = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', '
         />
       </template>
       <div
-        v-else
+        v-else-if="!balanceFailed"
         v-for="n in 3"
         :key="n"
         class="h-44 animate-pulse rounded-card bg-surface-deep"
