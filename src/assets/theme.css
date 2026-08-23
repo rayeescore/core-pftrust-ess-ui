@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/**
+ * The ESS design system.
+ *
+ * Tailwind 4 is CSS-first: there is no tailwind.config.js. Every custom property in @theme becomes both
+ * a utility class (--color-brand-500 -> bg-brand-500, text-brand-500) and a runtime CSS variable, so this
+ * block IS the config file. Charts read the same variables, which keeps one source of colour truth.
+ *
+ * Authored in oklch because Tailwind 4's own palette is, and because #d90f2d is exactly the kind of
+ * saturated red that shifts when a naive hex conversion meets a wide-gamut display.
+ */
+@theme {
+  /* --- brand -------------------------------------------------------------------------------------
+   * Mahindra red, demoted from the admin portal's large fills to identity and primary action only.
+   * It is never a status.
+   */
+  --color-brand-50: oklch(0.968 0.018 25);
+  --color-brand-100: oklch(0.925 0.045 25);
+  --color-brand-500: oklch(0.552 0.208 25); /* ~#d90f2d */
+  --color-brand-600: oklch(0.488 0.186 25); /* hover */
+  --color-brand-700: oklch(0.418 0.156 25); /* pressed */
+
+  /* --- semantic ----------------------------------------------------------------------------------
+   * The admin portal has none of these. Status is the dominant information type in this product, so
+   * every application state gets a colour that means one thing.
+   *
+   * THE DANGER RED IS NOT THE BRAND RED, and that is the single most likely visual failure here.
+   * Hue 25 -> 12, chroma 0.208 -> 0.145, lightness 0.552 -> 0.455: far enough apart that a rejected chip
+   * never reads as a brand accent, close enough that they still belong to one family.
+   */
+  --color-info-50: oklch(0.965 0.02 240);
+  --color-info-500: oklch(0.62 0.13 240);
+  --color-info-700: oklch(0.45 0.12 240);
+
+  --color-progress-50: oklch(0.968 0.03 75);
+  --color-progress-500: oklch(0.72 0.14 75);
+  --color-progress-700: oklch(0.52 0.12 75);
+
+  --color-success-50: oklch(0.96 0.03 150);
+  --color-success-500: oklch(0.60 0.14 150);
+  --color-success-700: oklch(0.44 0.12 150);
+
+  --color-warning-50: oklch(0.97 0.04 85);
+  --color-warning-500: oklch(0.75 0.15 85);
+  --color-warning-700: oklch(0.50 0.12 85);
+
+  --color-danger-50: oklch(0.965 0.02 12);
+  --color-danger-500: oklch(0.455 0.145 12);
+  --color-danger-700: oklch(0.38 0.13 12);
+
+  /* --- surfaces and ink ---------------------------------------------------------------------------
+   * Warm neutrals at hue ~78 -- the scale Vuetify was giving the admin portal for free, and which
+   * Tailwind gives us none of by default beyond its own grays.
+   */
+  --color-surface: oklch(1 0 0);
+  --color-surface-sub: oklch(0.985 0.004 78);
+  --color-surface-deep: oklch(0.965 0.006 78);
+  --color-border: oklch(0.915 0.006 78);
+  --color-border-strong: oklch(0.84 0.008 78);
+  --color-ink: oklch(0.24 0.012 78);
+  --color-ink-muted: oklch(0.52 0.01 78);
+  --color-ink-faint: oklch(0.66 0.008 78);
+
+  /* --- type ---------------------------------------------------------------------------------------
+   * Devanagari is a roadmap item, not a rewrite: both faces carry it, so the language toggle needs no
+   * second stack and no second set of metrics.
+   */
+  --font-display: "Tiro Devanagari Hindi", ui-serif, Georgia, serif;
+  --font-sans: "IBM Plex Sans Devanagari", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* --- shape and depth ----------------------------------------------------------------------------
+   * One shadow, used only on things that are genuinely raised. The admin portal's default Vuetify
+   * elevation on every surface is what makes it read as an operations console.
+   */
+  --radius-sm: 0.375rem; /* chips, inputs */
+  --radius-md: 0.625rem; /* buttons, tiles */
+  --radius-card: 0.875rem; /* cards, panels */
+
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.04), 0 8px 24px oklch(0 0 0 / 0.06);
+}
+
+/**
+ * Base layer.
+ *
+ * Tailwind 4 ships preflight, so this is only what preflight does not cover.
+ */
+@layer base {
+  html {
+    /* Members are on phones, and iOS zooms a page whose inputs are under 16px. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-surface-sub);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Money and identifiers align in columns or they are not tables, they are lists of digits. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Minimum 44px hit target throughout -- see the components artboard. Applied by the controls
+     themselves rather than globally, but declared here so the number lives in one place. */
+  :root {
+    --hit-target: 2.75rem;
+  }
+
+  /* Members print things: statements, application summaries, the passbook. */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    body {
+      background: white;
+    }
+  }
+}
