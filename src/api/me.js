@@ -8,16 +8,24 @@ import * as fixtures from '@/fixtures/member'
  * person. The fixture branch exists because those handlers are not built yet -- see CLAUDE.md -- and is
  * a single flag rather than a mock library so that deleting it is a one-line change per call.
  */
+// getIdentity is live against the API. The other three are still fixtures: their handlers are Phase 3.
 const useFixtures = import.meta.env.VITE_USE_FIXTURES === 'true'
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+/**
+ * The identity strip, and the portal's first call.
+ *
+ * Built and live: GET /api/v1/me. It also doubles as the check on the member's own account -- a caller
+ * whose login is not linked to a PF record gets a 409 here, which the shell renders as its own screen
+ * rather than as a failure.
+ */
 export async function getIdentity() {
   if (useFixtures) {
     await delay(200)
     return fixtures.identity
   }
-  return (await client.get('/')).data.data
+  return (await client.get('')).data.data
 }
 
 export async function getBalance() {

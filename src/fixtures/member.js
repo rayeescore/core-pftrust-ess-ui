@@ -9,6 +9,9 @@
  * Sunita Deshmukh: ₹27,80,690 as on 31 July 2026, after a medical advance paid in June and a transfer-in
  * credited in April. Amounts are strings because they are BigDecimal server-side.
  */
+// Matches GET /api/v1/me exactly -- that handler now exists, so this fixture is a copy of a real
+// response rather than a guess at one. statusLabel and statusTone arrive already translated: the raw
+// ContributionStatus symbol never reaches a browser, so every client says the same words.
 export const identity = {
   name: 'Sunita Deshmukh',
   pfNumber: '104782',
@@ -16,7 +19,9 @@ export const identity = {
   uanNumber: '100234567891',
   unitCode: '1204',
   location: 'Nashik',
-  contributionStatus: { symbol: 'A', label: 'Active member' },
+  statusLabel: 'Active member',
+  statusTone: 'success',
+  canApply: true,
 }
 
 export const balance = {

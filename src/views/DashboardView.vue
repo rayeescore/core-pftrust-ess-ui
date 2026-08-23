@@ -60,16 +60,15 @@ const MONTHS = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', '
         <h1 class="font-display text-2xl text-ink">
           {{ greeting() }}, {{ identity.name.split(' ')[0] }}
         </h1>
-        <StatusChip
-          :label="identity.contributionStatus.label"
-          :tone="identity.contributionStatus.symbol === 'A' ? 'success' : 'warning'"
-        />
+        <!-- Both the words and the tone come from the API. The client does not map a status symbol,
+             because two clients mapping it would eventually map it differently. -->
+        <StatusChip :label="identity.statusLabel" :tone="identity.statusTone" />
       </div>
       <div v-else class="h-8 w-64 animate-pulse rounded-md bg-surface-deep" />
 
       <p v-if="identity" class="mt-1 font-mono text-xs text-ink-faint">
         PF {{ identity.pfNumber }} · PERN {{ identity.pernNumber }} · UAN {{ identity.uanNumber }} ·
-        Unit {{ identity.unitCode }}, {{ identity.location }}
+        Unit {{ identity.unitCode }}<template v-if="identity.location">, {{ identity.location }}</template>
       </p>
     </section>
 
