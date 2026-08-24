@@ -1,18 +1,21 @@
 <script setup>
 import { ref } from 'vue'
 import MoneyDisplay from '@/components/ui/MoneyDisplay.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 /**
  * One of the three buckets every balance in this system splits into: the member's own contribution, the
  * company's, and voluntary (VPF).
  *
- * The tax split stays collapsed on purpose. The system's model is 3 buckets x 2 tax classes x
- * (contribution + interest) = twelve figures; the member's model is one number. Putting all twelve on
- * the dashboard would be showing them the database rather than their money.
+ * Bordered rather than raised, and it sits INSIDE the balance card — these are one figure broken down,
+ * not three separate facts, and the canvas nests them to say so.
+ *
+ * The tax split stays behind the footer strip on purpose. The system's model is 3 buckets x 2 tax
+ * classes x (contribution + interest) = twelve figures; the member's model is one number. Putting all
+ * twelve on the dashboard would be showing them the database rather than their money.
  */
 defineProps({
   title: { type: String, required: true },
-  subtitle: { type: String, default: '' },
   total: { type: [String, Number, null], default: null },
   contributed: { type: [String, Number, null], default: null },
   interest: { type: [String, Number, null], default: null },
@@ -24,45 +27,46 @@ const open = ref(false)
 </script>
 
 <template>
-  <div class="rounded-card bg-surface p-5 ring-1 ring-border">
-    <div class="flex items-baseline justify-between gap-2">
-      <div>
-        <h3 class="text-sm font-semibold text-ink">{{ title }}</h3>
-        <p v-if="subtitle" class="text-xs text-ink-faint">{{ subtitle }}</p>
-      </div>
-    </div>
+  <div class="overflow-hidden rounded-xl border border-border">
+    <div class="flex flex-col gap-[11px] px-[17px] py-[15px]">
+      <h3 class="text-[13.5px] font-semibold">{{ title }}</h3>
 
-    <div class="mt-3">
-      <MoneyDisplay :amount="total" size="lg" />
-    </div>
+      <MoneyDisplay :amount="total" size="md" />
 
-    <dl class="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
-      <div>
-        <dt class="text-xs text-ink-faint">Contributed</dt>
-        <dd class="mt-0.5"><MoneyDisplay :amount="contributed" size="sm" /></dd>
-      </div>
-      <div>
-        <dt class="text-xs text-ink-faint">Interest</dt>
-        <dd class="mt-0.5"><MoneyDisplay :amount="interest" size="sm" /></dd>
-      </div>
-    </dl>
+      <dl class="flex gap-[18px]">
+        <div class="flex flex-col gap-px">
+          <dt class="text-[11px] text-ink-faint">Contributed</dt>
+          <dd><MoneyDisplay :amount="contributed" size="xs" /></dd>
+        </div>
+        <div class="flex flex-col gap-px">
+          <dt class="text-[11px] text-ink-faint">Interest</dt>
+          <dd><MoneyDisplay :amount="interest" size="xs" /></dd>
+        </div>
+      </dl>
+    </div>
 
     <button
-      class="mt-3 -mb-1 text-xs font-medium text-brand-600 hover:text-brand-700"
+      class="flex w-full items-center justify-between border-t border-border bg-surface-sub px-[17px] py-[9px] text-left text-ink-muted transition-colors hover:bg-surface-deep"
       :aria-expanded="open"
       @click="open = !open"
     >
-      {{ open ? 'Hide' : 'Show' }} taxable / non-taxable split
+      <span class="text-xs">Tax split</span>
+      <AppIcon
+        name="chevronDown"
+        :size="14"
+        class="transition-transform"
+        :class="open ? 'rotate-180' : ''"
+      />
     </button>
 
-    <dl v-if="open" class="mt-3 grid grid-cols-2 gap-3 rounded-md bg-surface-sub p-3 text-sm">
-      <div>
-        <dt class="text-xs text-ink-faint">Non-taxable</dt>
-        <dd class="mt-0.5"><MoneyDisplay :amount="nonTaxable" size="sm" /></dd>
+    <dl v-if="open" class="flex gap-[18px] border-t border-border bg-surface-sub px-[17px] py-3">
+      <div class="flex flex-col gap-px">
+        <dt class="text-[11px] text-ink-faint">Non-taxable</dt>
+        <dd><MoneyDisplay :amount="nonTaxable" size="xs" /></dd>
       </div>
-      <div>
-        <dt class="text-xs text-ink-faint">Taxable</dt>
-        <dd class="mt-0.5"><MoneyDisplay :amount="taxable" size="sm" /></dd>
+      <div class="flex flex-col gap-px">
+        <dt class="text-[11px] text-ink-faint">Taxable</dt>
+        <dd><MoneyDisplay :amount="taxable" size="xs" /></dd>
       </div>
     </dl>
   </div>

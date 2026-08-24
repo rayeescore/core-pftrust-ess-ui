@@ -10,6 +10,8 @@ import './assets/theme.css'
  * is for looking at the screens, never for a deployment.
  */
 async function bootstrap() {
+  // Skipped only in full-fixture mode, which has no API and no realm to talk to. 'partial' signs in
+  // for real -- the identity call behind the shell is live.
   if (import.meta.env.VITE_USE_FIXTURES !== 'true') {
     await initKeycloak()
   }

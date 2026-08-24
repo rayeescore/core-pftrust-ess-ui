@@ -4,11 +4,12 @@
  * The ESS design system.
  *
  * Tailwind 4 is CSS-first: there is no tailwind.config.js. Every custom property in @theme becomes both
- * a utility class (--color-brand-500 -> bg-brand-500, text-brand-500) and a runtime CSS variable, so this
- * block IS the config file. Charts read the same variables, which keeps one source of colour truth.
+ * a utility class (--color-brand-500 -> bg-brand-500) and a runtime CSS variable, so this block IS the
+ * config file.
  *
- * Authored in oklch because Tailwind 4's own palette is, and because #d90f2d is exactly the kind of
- * saturated red that shifts when a naive hex conversion meets a wide-gamut display.
+ * Values are transcribed from the design canvas rather than approximated -- the artboards are authored
+ * in oklch and this is the same palette, not a hex round-trip of it. #d90f2d is exactly the kind of
+ * saturated red that shifts when a naive conversion meets a wide-gamut display.
  */
 @theme {
   /* --- brand -------------------------------------------------------------------------------------
@@ -18,74 +19,77 @@
   --color-brand-50: oklch(0.968 0.018 25);
   --color-brand-100: oklch(0.925 0.045 25);
   --color-brand-500: oklch(0.552 0.208 25); /* ~#d90f2d */
-  --color-brand-600: oklch(0.488 0.186 25); /* hover */
-  --color-brand-700: oklch(0.418 0.156 25); /* pressed */
+  --color-brand-600: oklch(0.488 0.186 25); /* links, hover */
+  --color-brand-700: oklch(0.418 0.156 25); /* pressed, on-tint text */
+
+  /* The three weights the mobile balance legend uses for the three buckets. One hue at three
+   * strengths, not three colours: they are parts of one total, and giving them separate hues would
+   * say they are separate categories. */
+  --color-bucket-1: oklch(0.552 0.208 25);
+  --color-bucket-2: oklch(0.7 0.13 25);
+  --color-bucket-3: oklch(0.85 0.065 25);
 
   /* --- semantic ----------------------------------------------------------------------------------
-   * The admin portal has none of these. Status is the dominant information type in this product, so
-   * every application state gets a colour that means one thing.
+   * Each status carries a tint, a border, a text tone and a solid -- the chips are pills with a dot,
+   * so they need all four rather than one hue.
    *
-   * THE DANGER RED IS NOT THE BRAND RED, and that is the single most likely visual failure here.
-   * Hue 25 -> 12, chroma 0.208 -> 0.145, lightness 0.552 -> 0.455: far enough apart that a rejected chip
-   * never reads as a brand accent, close enough that they still belong to one family.
+   * THE DANGER RED IS NOT THE BRAND RED. Hue 25 -> 12, chroma 0.208 -> 0.145, lightness 0.552 -> 0.455:
+   * far enough apart that a rejected chip never reads as a brand accent, close enough that they still
+   * belong to one family. This is the single most likely visual failure in this product.
    */
-  --color-info-50: oklch(0.965 0.02 240);
-  --color-info-500: oklch(0.62 0.13 240);
-  --color-info-700: oklch(0.45 0.12 240);
+  --color-success-50: oklch(0.958 0.028 155);
+  --color-success-200: oklch(0.89 0.05 155);
+  --color-success-500: oklch(0.585 0.125 155);
+  --color-success-700: oklch(0.405 0.085 155);
 
-  --color-progress-50: oklch(0.968 0.03 75);
-  --color-progress-500: oklch(0.72 0.14 75);
-  --color-progress-700: oklch(0.52 0.12 75);
+  --color-info-50: oklch(0.958 0.026 250);
+  --color-info-200: oklch(0.9 0.045 250);
+  --color-info-500: oklch(0.56 0.115 250);
+  --color-info-700: oklch(0.44 0.098 250);
 
-  --color-success-50: oklch(0.96 0.03 150);
-  --color-success-500: oklch(0.60 0.14 150);
-  --color-success-700: oklch(0.44 0.12 150);
+  --color-warning-50: oklch(0.962 0.04 85);
+  --color-warning-200: oklch(0.88 0.07 82);
+  --color-warning-500: oklch(0.52 0.105 70);
+  --color-warning-700: oklch(0.4 0.085 70);
 
-  --color-warning-50: oklch(0.97 0.04 85);
-  --color-warning-500: oklch(0.75 0.15 85);
-  --color-warning-700: oklch(0.50 0.12 85);
-
-  --color-danger-50: oklch(0.965 0.02 12);
+  --color-danger-50: oklch(0.962 0.025 12);
+  --color-danger-200: oklch(0.885 0.06 12);
   --color-danger-500: oklch(0.455 0.145 12);
   --color-danger-700: oklch(0.38 0.13 12);
 
   /* --- surfaces and ink ---------------------------------------------------------------------------
-   * Warm neutrals at hue ~78 -- the scale Vuetify was giving the admin portal for free, and which
-   * Tailwind gives us none of by default beyond its own grays.
+   * Warm neutrals around hue 65-80 -- the scale Vuetify gave the admin portal for free and Tailwind
+   * does not. Four ink steps, because the artboards genuinely use four.
    */
   --color-surface: oklch(1 0 0);
-  --color-surface-sub: oklch(0.985 0.004 78);
-  --color-surface-deep: oklch(0.965 0.006 78);
-  --color-border: oklch(0.915 0.006 78);
-  --color-border-strong: oklch(0.84 0.008 78);
-  --color-ink: oklch(0.24 0.012 78);
-  --color-ink-muted: oklch(0.52 0.01 78);
-  --color-ink-faint: oklch(0.66 0.008 78);
+  --color-surface-sub: oklch(0.977 0.005 80);
+  --color-surface-deep: oklch(0.955 0.008 80);
+  --color-border: oklch(0.905 0.008 78);
+  --color-border-subtle: oklch(0.938 0.006 80);
+  --color-border-strong: oklch(0.828 0.01 78);
+  --color-track: oklch(0.92 0.006 80);
+  --color-ink: oklch(0.245 0.012 65);
+  --color-ink-soft: oklch(0.42 0.012 65);
+  --color-ink-muted: oklch(0.52 0.012 65);
+  --color-ink-faint: oklch(0.66 0.01 70);
+  --color-ink-faintest: oklch(0.76 0.008 70);
 
   /* --- type ---------------------------------------------------------------------------------------
-   * Devanagari is a roadmap item, not a rewrite: both faces carry it, so the language toggle needs no
-   * second stack and no second set of metrics.
+   * The display face is a serif and it carries the money. That is the decision that stops this reading
+   * as an admin console: a balance set in the same sans as the navigation is a data cell, and a balance
+   * set in Tiro is a statement. Both faces carry Devanagari natively, so the Hindi/Marathi toggle needs
+   * no second stack.
    */
-  --font-display: "Tiro Devanagari Hindi", ui-serif, Georgia, serif;
-  --font-sans: "IBM Plex Sans Devanagari", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Tiro Devanagari Hindi", Georgia, serif;
+  --font-sans: "IBM Plex Sans Devanagari", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* --- shape and depth ----------------------------------------------------------------------------
-   * One shadow, used only on things that are genuinely raised. The admin portal's default Vuetify
-   * elevation on every surface is what makes it read as an operations console.
-   */
-  --radius-sm: 0.375rem; /* chips, inputs */
-  --radius-md: 0.625rem; /* buttons, tiles */
-  --radius-card: 0.875rem; /* cards, panels */
-
-  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.04), 0 8px 24px oklch(0 0 0 / 0.06);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-card: 0.875rem;
 }
 
-/**
- * Base layer.
- *
- * Tailwind 4 ships preflight, so this is only what preflight does not cover.
- */
 @layer base {
   html {
     /* Members are on phones, and iOS zooms a page whose inputs are under 16px. */
@@ -98,26 +102,37 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+}
 
-  /* Money and identifiers align in columns or they are not tables, they are lists of digits. */
+@layer components {
+  /* Money and identifiers align in columns, or they are not tables -- they are lists of digits. */
   .tabular {
     font-variant-numeric: tabular-nums;
   }
 
-  /* Minimum 44px hit target throughout -- see the components artboard. Applied by the controls
-     themselves rather than globally, but declared here so the number lives in one place. */
-  :root {
-    --hit-target: 2.75rem;
+  /* The uppercase micro-label above almost every figure in this design. Repeated often enough that
+     spelling out five utilities each time buries the content in the markup. */
+  .eyebrow {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    line-height: 1.3;
   }
 
-  /* Members print things: statements, application summaries, the passbook. */
-  @media print {
-    .no-print {
-      display: none !important;
-    }
+  .eyebrow-faint {
+    letter-spacing: 0.06em;
+    color: var(--color-ink-faint);
+  }
+}
 
-    body {
-      background: white;
-    }
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
   }
 }

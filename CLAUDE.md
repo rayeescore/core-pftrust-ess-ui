@@ -27,9 +27,17 @@ npm run dev                    # port 6064 -- 5173 belongs to the admin UI
 npm run build
 ```
 
-**`VITE_USE_FIXTURES=true` renders every screen against `src/fixtures/member.js` with no API and no
-sign-in.** That flag exists because the member API does not yet — see below. It is for looking at the
-screens and must never be set in a deployment.
+`VITE_USE_FIXTURES` has three settings, because the project is genuinely in three states at once:
+
+| | |
+|---|---|
+| `false` | every call live. Honest, and today it leaves most of the dashboard empty |
+| `true` | no API and no sign-in. For looking at screens; **never** in a deployment |
+| `partial` | live where the handler exists, fixtures where it does not — real sign-in *and* a complete dashboard |
+
+`partial` is the useful setting while Phase 3 is being built. The list of what is actually live is the
+`LIVE` set in `src/api/me.js`; edit it as handlers land, and when it covers everything the flag and the
+branching both go away.
 
 ## The design is already done
 
@@ -37,9 +45,24 @@ Nineteen artboards over eight pages: <https://claude.ai/code/artifact/b6b8c3ae-5
 Pages: Dashboard · Passbook · Apply for an advance (5 steps + tracker) · Profile & corrections ·
 Transfer in & exit · Help · **States** · **Foundations**.
 
-Read it before building a screen. The two pages worth reading even if you are not building a screen are
-Foundations (tokens and the component inventory) and States — nine states with real copy that a member
-visiting twice a year meets more often than the happy path.
+**Build against the artboard source, not a description of it.** The canvas's `.dc.html` files carry the
+real markup — exact oklch values, type sizes, spacing, and the SVG paths behind `AppIcon`. A first pass
+built from the *text* of the artboards produced something that read as a generic admin dashboard: no
+logo mark, no icons, sans-serif money, buckets floating beside the balance instead of nested inside it,
+and a circle stepper on the dashboard where the design uses a compact four-segment bar. Every one of
+those is visible at a glance and none of it was inferable from prose.
+
+The two pages worth reading even if you are not building a screen are Foundations (tokens and the
+component inventory) and States — nine states with real copy that a member visiting twice a year meets
+more often than the happy path.
+
+Two treatments that are decisions rather than reflows:
+
+- **The display face is a serif, and it carries the money.** A balance set in the same sans as the
+  navigation is a data cell; set in Tiro it is a statement. `MoneyDisplay`'s `display` size is the only
+  place this matters and it is the difference between this reading as a portal and as a console.
+- **On a phone the three balance buckets become a legend**, one hue at three weights — not three
+  stacked cards. They are parts of one total, and three hues would say they are separate categories.
 
 The design brief with the backend constraints behind it is `docs/ESS_PORTAL_DESIGN_BRIEF.md` in the
 `core-pftrust-service` repo.

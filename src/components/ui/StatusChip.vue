@@ -2,17 +2,18 @@
 import { computed } from 'vue'
 
 /**
- * One chip, every application type.
+ * One chip, every application type — loan, transfer-in, settlement, correction request and query — so
+ * the same meaning gets the same treatment wherever a member meets it.
  *
- * Shared by loan, transfer-in, settlement, correction request and query, so the same meaning gets the
- * same colour wherever a member meets it.
+ * A pill with a leading dot, per the canvas. The dot is what lets the chip stay legible when the tint
+ * behind it is as pale as these are, and it is the only part that carries the solid hue.
  *
- * The label comes from the API already translated -- the raw ApplicationStatus enum is mapped to
+ * The label arrives from the API already translated: the raw ApplicationStatus enum is mapped to
  * member-facing words server-side, so PENDING_FINAL_APPROVAL never reaches a browser and every client
- * says the same thing. This component maps the *tone*, and falls back to neutral for a tone it does not
- * recognise rather than rendering an unstyled chip.
+ * says the same thing. This component maps the TONE, never the wording.
  *
- * Only "awaiting-final" is a filled chip: it is the one state where something is about to happen.
+ * Only `awaiting-final` is a filled chip. It is the one state where something is about to happen, and
+ * the canvas gives it the emphasis for exactly that reason.
  */
 const props = defineProps({
   label: { type: String, required: true },
@@ -20,26 +21,26 @@ const props = defineProps({
 })
 
 const tones = {
-  neutral: 'bg-surface-deep text-ink-muted ring-border',
-  info: 'bg-info-50 text-info-700 ring-info-500/20',
-  'awaiting-final': 'bg-info-500 text-white ring-info-500',
-  progress: 'bg-progress-50 text-progress-700 ring-progress-500/25',
-  success: 'bg-success-50 text-success-700 ring-success-500/20',
-  warning: 'bg-warning-50 text-warning-700 ring-warning-500/25',
-  // Deliberately not the brand red. Brand red means identity and primary action; if it also meant
-  // "rejected" a member could not tell a header from a refusal.
-  danger: 'bg-danger-50 text-danger-700 ring-danger-500/20',
-  muted: 'bg-surface-deep text-ink-faint ring-border',
+  neutral: { chip: 'bg-surface-deep text-ink-soft border-border', dot: 'bg-ink-faint' },
+  info: { chip: 'bg-info-50 text-info-700 border-info-200', dot: 'bg-info-500' },
+  'awaiting-final': { chip: 'bg-info-500 text-white border-info-500', dot: 'bg-white' },
+  progress: { chip: 'bg-warning-50 text-warning-700 border-warning-200', dot: 'bg-warning-500' },
+  success: { chip: 'bg-success-50 text-success-700 border-success-200', dot: 'bg-success-500' },
+  warning: { chip: 'bg-warning-50 text-warning-700 border-warning-200', dot: 'bg-warning-500' },
+  // Deliberately not the brand red. If those converge a member cannot tell a header from a refusal.
+  danger: { chip: 'bg-danger-50 text-danger-700 border-danger-200', dot: 'bg-danger-500' },
+  muted: { chip: 'bg-surface-deep text-ink-faint border-border', dot: 'bg-ink-faintest' },
 }
 
-const classes = computed(() => tones[props.tone] ?? tones.neutral)
+const tone = computed(() => tones[props.tone] ?? tones.neutral)
 </script>
 
 <template>
   <span
-    class="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-medium ring-1 ring-inset whitespace-nowrap"
-    :class="classes"
+    class="inline-flex shrink-0 items-center gap-[7px] rounded-full border py-[5px] pr-3 pl-[9px] text-[12.5px] font-medium whitespace-nowrap"
+    :class="tone.chip"
   >
+    <span class="size-1.5 shrink-0 rounded-full" :class="tone.dot" />
     {{ label }}
   </span>
 </template>

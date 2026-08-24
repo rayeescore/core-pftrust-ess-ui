@@ -2,75 +2,102 @@
 import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { logout } from '@/keycloak/keycloak'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 /**
- * The frame every screen sits in: identity in the top bar, a left rail on desktop, and a four-item
- * bottom nav on mobile.
+ * The frame every screen sits in: a 64px top bar, a 232px left rail on desktop, and a four-item bottom
+ * nav on a phone.
  *
- * Content is capped at ~1120px. The admin portal's full-bleed data tables are right for a clerk working
- * a queue all day and wrong for somebody reading their own balance twice a year.
+ * The rail is white against a warm off-white page rather than transparent, which is what separates it
+ * from the content column without a heavy border. Both come straight from the canvas.
  */
 defineProps({
   identity: { type: Object, default: null },
 })
 
+// A divider sits before the last two, because they are reference rather than the member's own record.
 const nav = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/pf', label: 'My PF' },
-  { to: '/profile', label: 'My profile' },
-  { to: '/loans', label: 'Loans & advances' },
-  { to: '/transfer-in', label: 'Transfer in' },
-  { to: '/claims', label: 'Leaving & claims' },
-  { to: '/help', label: 'Help & queries' },
-  { to: '/trust', label: 'Know your trust' },
+  { to: '/', label: 'Dashboard', icon: 'home' },
+  { to: '/pf', label: 'My PF', icon: 'passbook' },
+  { to: '/profile', label: 'My profile', icon: 'profile' },
+  { to: '/loans', label: 'Loans & advances', icon: 'loan' },
+  { to: '/transfer-in', label: 'Transfer in', icon: 'transferIn' },
+  { to: '/claims', label: 'Leaving & claims', icon: 'claims' },
+  { divider: true },
+  { to: '/help', label: 'Help & queries', icon: 'help' },
+  { to: '/trust', label: 'Know your trust', icon: 'trust' },
 ]
 
 // Four, because a phone thumb reaches four. Everything else is behind the profile menu.
 const mobileNav = [
-  { to: '/', label: 'Home' },
-  { to: '/pf', label: 'My PF' },
-  { to: '/loans', label: 'Apply' },
-  { to: '/help', label: 'Help' },
+  { to: '/', label: 'Home', icon: 'home' },
+  { to: '/pf', label: 'My PF', icon: 'passbook' },
+  { to: '/loans', label: 'Apply', icon: 'plus' },
+  { to: '/help', label: 'Help', icon: 'help' },
 ]
 
 const menuOpen = ref(false)
+
+const initials = (name) =>
+  (name || '?')
+    .split(' ')
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
 </script>
 
 <template>
   <div class="min-h-dvh">
-    <header class="no-print sticky top-0 z-20 border-b border-border bg-surface/90 backdrop-blur">
-      <div class="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-4 px-4">
-        <RouterLink to="/" class="flex items-baseline gap-2">
-          <span class="text-base font-semibold text-brand-500">CorePF Trust</span>
-          <span class="hidden text-sm text-ink-faint sm:inline">Member portal</span>
+    <!-- TOP BAR -->
+    <header class="no-print sticky top-0 z-20 h-16 border-b border-border bg-surface">
+      <div class="flex h-full items-center justify-between px-5 sm:px-7">
+        <RouterLink to="/" class="flex items-center gap-[11px]">
+          <span
+            class="flex size-[30px] items-center justify-center rounded-lg bg-brand-500 text-white"
+          >
+            <AppIcon name="home" :size="17" />
+          </span>
+          <span class="flex flex-col leading-none">
+            <span class="font-display text-base leading-[1.1]">CorePF Trust</span>
+            <span class="text-[10.5px] uppercase tracking-[0.07em] text-ink-faint">Member portal</span>
+          </span>
         </RouterLink>
 
-        <div class="flex items-center gap-2">
-          <!-- Hindi and Marathi are on the roadmap; both type faces already carry Devanagari. -->
+        <div class="flex items-center gap-4 sm:gap-[18px]">
+          <!-- Hindi and Marathi are on the roadmap; both faces already carry Devanagari. -->
           <button
-            class="rounded-sm px-2 py-1 text-xs font-medium text-ink-muted hover:bg-surface-deep"
+            class="flex items-center gap-[7px] rounded-full border border-border px-[13px] py-1.5 text-ink-muted transition-colors hover:bg-surface-sub"
             aria-label="Change language"
           >
-            EN
+            <AppIcon name="globe" :size="14" />
+            <span class="text-[13px] font-medium text-ink">EN</span>
           </button>
 
           <div class="relative">
             <button
-              class="flex size-9 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700"
+              class="flex items-center gap-2.5"
               :aria-expanded="menuOpen"
               @click="menuOpen = !menuOpen"
             >
-              {{ (identity?.name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('') }}
+              <span
+                class="flex size-8 items-center justify-center rounded-full bg-brand-100 text-[13px] font-semibold text-brand-700"
+              >
+                {{ initials(identity?.name) }}
+              </span>
+              <AppIcon name="chevronDown" :size="14" class="text-ink-muted" />
             </button>
 
             <div
               v-if="menuOpen"
-              class="absolute right-0 mt-2 w-56 rounded-card bg-surface p-2 shadow-card ring-1 ring-border"
+              class="absolute right-0 z-30 mt-3 w-60 rounded-card border border-border bg-surface p-2 shadow-lg"
             >
-              <p class="px-2 py-1.5 text-sm font-medium text-ink">{{ identity?.name }}</p>
-              <p class="px-2 pb-2 font-mono text-xs text-ink-faint">PF {{ identity?.pfNumber }}</p>
+              <p class="px-2.5 pt-1.5 text-sm font-semibold">{{ identity?.name || '—' }}</p>
+              <p class="px-2.5 pb-2.5 font-mono text-[11.5px] text-ink-faint">
+                PF {{ identity?.pfNumber || '—' }}
+              </p>
               <button
-                class="w-full rounded-sm px-2 py-2 text-left text-sm text-ink-muted hover:bg-surface-deep"
+                class="w-full rounded-md px-2.5 py-2 text-left text-sm text-ink-soft hover:bg-surface-sub"
                 @click="logout()"
               >
                 Sign out
@@ -81,23 +108,27 @@ const menuOpen = ref(false)
       </div>
     </header>
 
-    <div class="mx-auto flex max-w-[1120px] gap-8 px-4 py-6">
-      <nav class="no-print hidden w-56 shrink-0 lg:block">
-        <ul class="sticky top-20 space-y-0.5">
-          <li v-for="item in nav" :key="item.to">
+    <div class="flex items-stretch">
+      <!-- LEFT RAIL -->
+      <nav class="no-print hidden w-[232px] shrink-0 border-r border-border bg-surface px-3.5 py-[22px] lg:block">
+        <ul class="sticky top-[86px] flex flex-col gap-[3px]">
+          <li v-for="(item, index) in nav" :key="item.to ?? `divider-${index}`">
+            <hr v-if="item.divider" class="mx-3 my-3 border-0 border-t border-border-subtle" />
             <RouterLink
+              v-else
               :to="item.to"
-              class="block rounded-md px-3 py-2 text-sm text-ink-muted hover:bg-surface-deep hover:text-ink"
-              active-class="bg-brand-50 font-medium text-brand-700 hover:bg-brand-50"
+              class="flex items-center gap-[11px] rounded-[10px] px-3 py-2.5 text-sm text-ink-soft transition-colors hover:bg-surface-sub"
+              active-class="!bg-brand-50 !text-brand-700 font-semibold"
             >
-              {{ item.label }}
+              <AppIcon :name="item.icon" :size="17" />
+              <span>{{ item.label }}</span>
             </RouterLink>
           </li>
         </ul>
       </nav>
 
-      <!-- pb-20 clears the mobile bottom nav, which is fixed. -->
-      <main class="min-w-0 flex-1 pb-20 lg:pb-0">
+      <!-- pb-24 clears the fixed mobile bottom nav. -->
+      <main class="min-w-0 flex-1 px-5 pt-7 pb-24 sm:px-[34px] lg:pb-11">
         <RouterView />
       </main>
     </div>
@@ -109,9 +140,10 @@ const menuOpen = ref(false)
         v-for="item in mobileNav"
         :key="item.to"
         :to="item.to"
-        class="flex h-16 flex-col items-center justify-center text-xs text-ink-muted"
-        active-class="text-brand-600 font-medium"
+        class="flex h-16 flex-col items-center justify-center gap-1 text-[11px] text-ink-faint"
+        active-class="text-brand-600 font-semibold"
       >
+        <AppIcon :name="item.icon" :size="19" />
         {{ item.label }}
       </RouterLink>
     </nav>

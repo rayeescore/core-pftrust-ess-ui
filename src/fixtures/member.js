@@ -75,6 +75,9 @@ export const applications = [
     note: 'With the second approver since 18 Aug 2026. Two people must approve an advance.',
     amountLabel: 'Approved amount',
     amount: '2780690.00',
+    // Two milestones behind them, the third in flight. Four in total because two different people must
+    // approve -- ApprovalAccess enforces that the same person cannot do both stages.
+    completedSteps: 2,
     steps: [
       { label: 'Submitted', date: '02-08-2026' },
       { label: 'Under review', date: '11-08-2026' },
@@ -91,6 +94,7 @@ export const applications = [
     note: 'We have written to your previous trust for Annexure K. This normally takes a few months — nothing is needed from you until it arrives.',
     amountLabel: null,
     amount: null,
+    completedSteps: 1,
     steps: [
       { label: 'Submitted', date: '14-04-2026' },
       { label: 'Under review', since: '20-04-2026' },
