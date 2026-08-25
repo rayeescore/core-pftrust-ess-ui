@@ -32,6 +32,16 @@ const paths = {
   download: ['M9 2.6v8.8M5.6 8 9 11.4 12.4 8M3 14.4h12'],
   edit: ['M11.6 3.4 14.6 6.4 6.6 14.4H3.6v-3z'],
   warning: ['M9 2.6 16.4 15.4H1.6z', 'M9 7.2v3.4M9 13h.01'],
+  info: ['M9 8.4v4.2M9 5.6h.01'],
+  clock: ['M8 4.8v3.6l2.4 1.4'],
+  // Direction matters on these two: money arriving from another trust, and money leaving on an advance.
+  arrowIn: ['M2.4 8h11.2M9.6 4l4 4-4 4'],
+  arrowOut: ['M13.6 8H2.4M6.4 4l-4 4 4 4'],
+  check: ['M13.2 4.8 6.6 11.4 3.2 8'],
+  upload: ['M9 11.4V2.6M5.6 6 9 2.6 12.4 6M3 14.4h12'],
+  file: ['M10.4 2.6H5a1.4 1.4 0 0 0-1.4 1.4v10a1.4 1.4 0 0 0 1.4 1.4h8a1.4 1.4 0 0 0 1.4-1.4V6.6z', 'M10.4 2.6v4h4'],
+  lock: ['M5.2 8V6a3.8 3.8 0 0 1 7.6 0v2', 'M4.2 8h9.6v6.2H4.2z'],
+  arrowLeftSmall: ['m10 3.5-4.5 4.5L10 12.5'],
 }
 
 /** Glyphs whose shape needs a circle the path syntax above cannot express. */
@@ -39,12 +49,14 @@ const circles = {
   profile: { cx: 9, cy: 6.4, r: 2.9 },
   loan: { cx: 9, cy: 9, r: 6.4 },
   trust: { cx: 9, cy: 9, r: 6.4 },
+  info: { cx: 9, cy: 9, r: 7.2 },
+  clock: { cx: 8, cy: 8, r: 6.4 },
   plus: { cx: 9, cy: 9, r: 6.4 },
   globe: { cx: 8, cy: 8, r: 6.3 },
 }
 
 /** The two glyphs the canvas draws on a 16-unit grid rather than 18. */
-const smallGrid = ['globe', 'chevronDown', 'chevronRight']
+const smallGrid = ['globe', 'chevronDown', 'chevronRight', 'clock', 'arrowIn', 'arrowOut', 'check', 'arrowLeftSmall']
 
 const viewBox = computed(() => (smallGrid.includes(props.name) ? '0 0 16 16' : '0 0 18 18'))
 const rect = computed(() => (props.name === 'passbook' ? { x: 2.4, y: 4.2, w: 13.2, h: 10.2, r: 2.2 } : null))

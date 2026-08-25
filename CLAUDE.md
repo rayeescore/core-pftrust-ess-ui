@@ -69,15 +69,26 @@ The design brief with the backend constraints behind it is `docs/ESS_PORTAL_DESI
 
 ## What exists and what does not
 
-**Built:** the design tokens, the app shell, Keycloak auth with silent refresh, the API client, the
-formatting rules, five UI primitives, two product components, and the dashboard.
+**Built:** every screen on the canvas — dashboard, passbook, the five-step advance flow and its
+tracker, profile, corrections, transfer-in, claims, and help — plus the shell, Keycloak auth with
+silent refresh, the API client, the formatting rules and the component set behind all of it.
 
-**Not built:** everything else, and — the thing to know before planning any work here — **the member API
-itself.** There is no `/api/v1/me` in `core-pftrust-service` yet. What *is* built there is the identity
-binding: `pf/identity` provisions a Keycloak account per member, username = **PF number lower-cased**,
-with the `MEMBER` realm role. So members can sign in; there is just nothing yet for them to read.
+**Not built: almost all of the member API.** Only `GET /api/v1/me` exists in `core-pftrust-service`;
+every other call in `src/api/me.js` is still a fixture, and the `LIVE` set there is the list to edit as
+handlers land. So the screens are complete and most of them are showing the design canvas's member
+rather than the signed-in one.
 
-Adding a screen therefore usually means adding its handler on the API side first.
+Four screens also depend on backend work that has not started, and each says so where a member would
+otherwise be misled:
+
+- **Documents step** — `loan_document_mapping` is seeded for loan type 01 only, so eleven of the twelve
+  purposes return an empty list. The screen shows "No documents are mapped for this purpose", not "you
+  need none", because those are very different sentences.
+- **Details step** — `POST /api/v1/loan` demands the property block *and* a repayment-bank block for
+  every purpose, and asks the member for the trust's own paying bank. All three need relaxing.
+- **Loan tracker** — only transfer-in stores a rejection reason, so a refused advance cannot yet say why.
+- **Claims** — `SettlementFinalDetails` is only written once a clerk has keyed the settlement in, so the
+  worksheet a leaver needs in order to choose is produced *after* they have chosen.
 
 ## Rules this app is built on
 

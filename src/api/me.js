@@ -73,3 +73,75 @@ export async function getAlerts() {
   }
   return (await client.get('/alerts')).data.data
 }
+
+/** Phase 3. Month 0 is the opening balance; events sit inline between the months. */
+export async function getPassbook(year) {
+  if (!isLive('passbook')) {
+    await delay(350)
+    return fixtures.passbook
+  }
+  return (await client.get('/contributions', { params: { year } })).data.data
+}
+
+/** Phase 3. The years a statement exists for, so the picker never offers an empty one. */
+export async function getContributedYears() {
+  if (!isLive('contributedYears')) {
+    await delay(150)
+    return fixtures.contributedYears
+  }
+  return (await client.get('/contributions/years')).data.data
+}
+
+/** Phase 3. Carries structured eligibility reasons rather than the exception strings thrown today. */
+export async function getLoanTypes() {
+  if (!isLive('loanTypes')) {
+    await delay(300)
+    return fixtures.loanTypes
+  }
+  return (await client.get('/loans/types')).data.data
+}
+
+/** Phase 3. The four limits and which one bound -- see EntitlementCard. */
+export async function checkLoanEligibility(request) {
+  if (!isLive('loanEligibility')) {
+    await delay(250)
+    return fixtures.entitlement
+  }
+  return (await client.post('/loans/eligibility', request)).data.data
+}
+
+/** Phase 3. Empty for eleven of the twelve purposes until loan_document_mapping is populated. */
+export async function getLoanDocuments(code) {
+  if (!isLive('loanDocuments')) {
+    await delay(250)
+    return code === '01' ? fixtures.loanDocuments : []
+  }
+  return (await client.get(`/loans/types/${code}/documents`)).data.data
+}
+
+/** Phase 3. */
+export async function getLoan(id) {
+  if (!isLive('loan')) {
+    await delay(300)
+    return fixtures.loan
+  }
+  return (await client.get(`/loans/${id}`)).data.data
+}
+
+/** Phase 3. Masked server-side: the member record never carries a full PAN or Aadhaar. */
+export async function getProfile() {
+  if (!isLive('profile')) {
+    await delay(300)
+    return fixtures.profile
+  }
+  return (await client.get('/profile')).data.data
+}
+
+/** Phase 3. Own tickets only -- and closing has to be scoped to the owner, which it is not today. */
+export async function getTickets() {
+  if (!isLive('tickets')) {
+    await delay(300)
+    return fixtures.tickets
+  }
+  return (await client.get('/tickets')).data.data
+}
