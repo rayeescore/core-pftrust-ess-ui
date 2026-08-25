@@ -21,8 +21,27 @@ import * as fixtures from '@/fixtures/member'
  */
 const MODE = import.meta.env.VITE_USE_FIXTURES ?? 'false'
 
-/** Handlers that exist in core-pftrust-service today. */
-const LIVE = new Set(['identity'])
+/**
+ * Handlers that exist in core-pftrust-service today.
+ *
+ * All of them, as of the member API being built. The flag and the branching below are now dead weight
+ * kept for one reason: a screen whose handler is still being changed can be pulled back to a fixture by
+ * removing one line, without touching the component.
+ */
+const LIVE = new Set([
+  'identity',
+  'profile',
+  'balance',
+  'passbook',
+  'contributedYears',
+  'applications',
+  'alerts',
+  'loanTypes',
+  'loanEligibility',
+  'loanDocuments',
+  'loan',
+  'tickets',
+])
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
