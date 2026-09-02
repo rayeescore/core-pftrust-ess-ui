@@ -39,8 +39,10 @@ const LIVE = new Set([
   'loanTypes',
   'loanEligibility',
   'loanDocuments',
+  'loans',
   'loan',
   'tickets',
+  'trust',
 ])
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -138,6 +140,20 @@ export async function getLoanDocuments(code) {
   return (await client.get(`/loans/types/${code}/documents`)).data.data
 }
 
+/**
+ * Every advance the caller has applied for, newest first.
+ *
+ * No identifier goes out. The list is "mine" by construction, which is what makes there be no such
+ * thing as somebody else's list to ask for.
+ */
+export async function getLoans() {
+  if (!isLive('loans')) {
+    await delay(300)
+    return [fixtures.loan]
+  }
+  return (await client.get('/loans')).data.data
+}
+
 /** Phase 3. */
 export async function getLoan(id) {
   if (!isLive('loan')) {
@@ -163,4 +179,22 @@ export async function getTickets() {
     return fixtures.tickets
   }
   return (await client.get('/tickets')).data.data
+}
+
+/**
+ * Who holds the member's money, in the part a member is entitled to know.
+ *
+ * The only member call that is not about the caller -- the trust is the same trust for everybody, so
+ * there is nothing to resolve from the token. It is still behind MEMBER: an unauthenticated reader has
+ * no business enumerating the trustees.
+ *
+ * The record deliberately drops the trust's own bank account, IFSC, PAN and TAN, which the staff entity
+ * carries. Returning that shape would publish the trust's bank account to every member at once.
+ */
+export async function getTrust() {
+  if (!isLive('trust')) {
+    await delay(250)
+    return fixtures.trust
+  }
+  return (await client.get('/trust')).data.data
 }

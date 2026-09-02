@@ -16,6 +16,8 @@ const router = createRouter({
 
     { path: '/pf', name: 'passbook', component: () => import('@/views/PassbookView.vue') },
 
+    { path: '/loans', name: 'loan-list', component: () => import('@/views/loan/LoanListView.vue') },
+
     // The five-step advance flow. Each step is a route so Back works, a half-filled application can be
     // linked to, and the Change links on Review go somewhere.
     { path: '/loans/apply', name: 'loan-purpose', component: () => import('@/views/loan/PurposeView.vue') },
@@ -30,6 +32,7 @@ const router = createRouter({
     { path: '/transfer-in', name: 'transfer-in', component: () => import('@/views/TransferInView.vue') },
     { path: '/claims', name: 'claims', component: () => import('@/views/ClaimView.vue') },
     { path: '/help', name: 'help', component: () => import('@/views/HelpView.vue') },
+    { path: '/trust', name: 'trust', component: () => import('@/views/TrustView.vue') },
 
     { path: '/:pathMatch(.*)*', name: 'not-built', component: () => import('@/views/NotBuiltView.vue') },
   ],

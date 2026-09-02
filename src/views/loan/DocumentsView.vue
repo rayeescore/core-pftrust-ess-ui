@@ -39,7 +39,7 @@ const attached = computed(
     :intro="
       documents?.length
         ? `The trust asks for ${documents.length} documents for this purpose. Each has its own slot, so nothing gets lost in a pile.`
-        : 'The trust asks for no documents for this purpose.'
+        : 'We have no document list on file for this purpose. Check with the PF department before you submit.'
     "
     note="The required set is data, not code — it changes per purpose and the PF department can change it without a release."
     @back="router.push('/loans/apply/details')"
