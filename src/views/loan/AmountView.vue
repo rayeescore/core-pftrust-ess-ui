@@ -28,6 +28,9 @@ async function recalculate() {
     totalCost: draft.value.totalCost,
     requested: draft.value.requested,
   })
+  // Carried forward so the review step can show the figure the member is actually agreeing to without
+  // asking again. The API recomputes it on submit regardless; this is what they saw, not what they get.
+  draft.value.entitlement = entitlement.value?.amount ?? null
 }
 
 onMounted(recalculate)
