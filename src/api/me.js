@@ -39,6 +39,7 @@ const LIVE = new Set([
   'loanTypes',
   'loanEligibility',
   'loanDocuments',
+  'loans',
   'loan',
   'tickets',
 ])
@@ -136,6 +137,20 @@ export async function getLoanDocuments(code) {
     return code === '01' ? fixtures.loanDocuments : []
   }
   return (await client.get(`/loans/types/${code}/documents`)).data.data
+}
+
+/**
+ * Every advance the caller has applied for, newest first.
+ *
+ * No identifier goes out. The list is "mine" by construction, which is what makes there be no such
+ * thing as somebody else's list to ask for.
+ */
+export async function getLoans() {
+  if (!isLive('loans')) {
+    await delay(300)
+    return [fixtures.loan]
+  }
+  return (await client.get('/loans')).data.data
 }
 
 /** Phase 3. */

@@ -351,10 +351,14 @@ export const loanDocuments = [
 ]
 
 export const loan = {
+  id: '9f2c7b41-58ad-4e0c-9d33-6b1e0a77c4e2',
   reference: 'PFL/2026-27/00184',
   title: 'Purchase of residential flat',
   appliedOn: '02-08-2026',
   status: { label: 'Awaiting final approval', tone: 'awaiting-final' },
+  // Two milestones behind, the third in flight -- the same figure MemberStatus.completedSteps derives
+  // from PENDING_FINAL_APPROVAL. Without it the progress bar contradicted the chip beside it.
+  completedSteps: 2,
   steps: [
     { label: 'Submitted', when: '02 Aug 2026', state: 'done' },
     { label: 'Checked and approved', when: '18 Aug 2026', state: 'done' },
