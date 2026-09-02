@@ -467,3 +467,18 @@ export const tickets = [
     ],
   },
 ]
+
+export const trust = {
+  name: 'CorePF Employees Provident Fund Trust',
+  incorporatedOn: '01-04-1998',
+  registeredAddress: 'Gateway Building, Apollo Bunder, Mumbai, Maharashtra',
+  registeredPinCode: '400001',
+  contactName: 'PF Department',
+  email: 'pf.trust@example.com',
+  contact: '022 2202 4444',
+  trustees: [
+    { name: 'Chairman of the Board', since: '01-04-2019' },
+    { name: 'Trustee — employer nominee', since: '01-07-2021' },
+    { name: 'Trustee — member nominee', since: '01-07-2021' },
+  ],
+}

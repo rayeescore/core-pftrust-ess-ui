@@ -32,6 +32,7 @@ const router = createRouter({
     { path: '/transfer-in', name: 'transfer-in', component: () => import('@/views/TransferInView.vue') },
     { path: '/claims', name: 'claims', component: () => import('@/views/ClaimView.vue') },
     { path: '/help', name: 'help', component: () => import('@/views/HelpView.vue') },
+    { path: '/trust', name: 'trust', component: () => import('@/views/TrustView.vue') },
 
     { path: '/:pathMatch(.*)*', name: 'not-built', component: () => import('@/views/NotBuiltView.vue') },
   ],
