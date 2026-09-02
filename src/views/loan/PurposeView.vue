@@ -22,9 +22,12 @@ onMounted(async () => {
   groups.value = await me.getLoanTypes()
 })
 
-function choose(type) {
+function choose(group, type) {
   if (!type.eligible) return
   draft.value.purpose = type
+  // The group comes with the purpose because the details step needs it: whether a property block is
+  // asked is the trust's grouping, not a list of codes this screen would have to keep in step.
+  draft.value.group = group.name
 }
 
 const ineligibleCount = (list) =>
@@ -54,7 +57,7 @@ const ineligibleCount = (list) =>
             :key="type.code"
             type="button"
             :disabled="!type.eligible"
-            @click="choose(type)"
+            @click="choose(group, type)"
             class="flex flex-col gap-[7px] rounded-xl px-4 py-3.5 text-left transition-colors"
             :class="[
               draft.purpose?.code === type.code

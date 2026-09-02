@@ -43,6 +43,8 @@ const LIVE = new Set([
   'loan',
   'tickets',
   'trust',
+  'createLoan',
+  'uploadDocument',
 ])
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -197,4 +199,39 @@ export async function getTrust() {
     return fixtures.trust
   }
   return (await client.get('/trust')).data.data
+}
+
+/**
+ * Submit the advance.
+ *
+ * Nothing in the request names a person, and nothing in it names the trust's paying bank or the
+ * member's own account either -- the first is chosen by the PF department, the second is copied from
+ * the employee master server-side. A member who could type an account number on an advance could
+ * redirect their own disbursement.
+ *
+ * The entitlement is recomputed server-side. Asking for more than it is allowed and is recorded as
+ * what you asked for; what you get is what the trust works out.
+ */
+export async function createLoan(request) {
+  if (!isLive('createLoan')) {
+    await delay(700)
+    return fixtures.loan
+  }
+  return (await client.post('/loans', request)).data.data
+}
+
+/**
+ * One file, up to 5 MB, PDF or photograph.
+ *
+ * Returns { fileName, path }. The path is what the create call sends back -- and the API checks it is
+ * one it issued before anything reads it, so a path invented here would be refused rather than served.
+ */
+export async function uploadDocument(file) {
+  if (!isLive('uploadDocument')) {
+    await delay(600)
+    return { fileName: file.name, path: `fixture/${file.name}` }
+  }
+  const body = new FormData()
+  body.append('file', file)
+  return (await client.post('/documents/upload', body)).data.data
 }
