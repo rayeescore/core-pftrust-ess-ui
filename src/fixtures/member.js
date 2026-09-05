@@ -419,6 +419,7 @@ export const profile = {
 
 export const tickets = [
   {
+    id: 't1',
     reference: 'PFT-4471',
     subject: 'June contribution missing',
     category: 'Contributions',
@@ -431,16 +432,20 @@ export const tickets = [
         from: 'you',
         body: 'My June contribution has not appeared in the passbook, though it was deducted from my salary. Payslip attached.',
         attachment: 'payslip-jun-2026.pdf',
+        attachmentId: 'c1',
         at: '12 Aug 2026, 09:41',
       },
       {
         from: 'department',
         body: 'June came through in the payroll feed we received on 08 August and is posted now — you should see it in the passbook. Nothing was missing from your account; the feed simply runs a month behind.',
+        attachment: null,
+        attachmentId: null,
         at: '13 Aug 2026, 15:07',
       },
     ],
   },
   {
+    id: 't2',
     reference: 'PFT-4102',
     subject: 'How long does a transfer in take?',
     category: 'Transfer ins',
@@ -449,11 +454,12 @@ export const tickets = [
     lastActivity: 'Closed 09 Jul 2026',
     closed: true,
     messages: [
-      { from: 'you', body: 'I applied for a transfer in from Bharat Forge in April. How long does this normally take?', at: '02 Jul 2026, 11:20' },
-      { from: 'department', body: 'Three to six months is normal. We write to the previous trust for Annexure K and cannot move faster than they reply. Nothing is needed from you meanwhile.', at: '09 Jul 2026, 10:02' },
+      { from: 'you', body: 'I applied for a transfer in from Bharat Forge in April. How long does this normally take?', attachment: null, attachmentId: null, at: '02 Jul 2026, 11:20' },
+      { from: 'department', body: 'Three to six months is normal. We write to the previous trust for Annexure K and cannot move faster than they reply. Nothing is needed from you meanwhile.', attachment: null, attachmentId: null, at: '09 Jul 2026, 10:02' },
     ],
   },
   {
+    id: 't3',
     reference: 'PFT-3866',
     subject: 'Nominee share correction',
     category: 'Your details',
@@ -462,8 +468,8 @@ export const tickets = [
     lastActivity: 'Closed 22 May 2026',
     closed: true,
     messages: [
-      { from: 'you', body: 'I would like to change my nominee shares.', at: '18 May 2026, 14:02' },
-      { from: 'department', body: 'Updated as requested. Please check the profile screen and raise this again if anything still looks wrong.', at: '22 May 2026, 09:15' },
+      { from: 'you', body: 'I would like to change my nominee shares.', attachment: null, attachmentId: null, at: '18 May 2026, 14:02' },
+      { from: 'department', body: 'Updated as requested. Please check the profile screen and raise this again if anything still looks wrong.', attachment: null, attachmentId: null, at: '22 May 2026, 09:15' },
     ],
   },
 ]
