@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/api/client', () => ({
-  default: { get: vi.fn(), post: vi.fn() },
+  default: { get: vi.fn(), post: vi.fn(), put: vi.fn() },
 }))
 
 import client from '@/api/client'
@@ -101,5 +101,125 @@ describe('uploadDocument', () => {
     // The path comes back from the API and is what the create call references. The API checks it is
     // one it issued, so a path invented here would be refused rather than served.
     expect(stored.path).toBe('/x/member_1.pdf')
+  })
+})
+
+describe('getTicket', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('fetches one ticket by id and unwraps the envelope', async () => {
+    client.get.mockResolvedValue({ data: { data: { id: 'abc', subject: 'Wrong PF number' } } })
+
+    const ticket = await me.getTicket('abc')
+
+    expect(client.get).toHaveBeenCalledWith('/tickets/abc')
+    expect(ticket).toEqual({ id: 'abc', subject: 'Wrong PF number' })
+  })
+})
+
+describe('getTicketCategories', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('fetches the category list and unwraps the envelope', async () => {
+    client.get.mockResolvedValue({
+      data: { data: [{ code: 'LOANS', label: 'Loans' }] },
+    })
+
+    const categories = await me.getTicketCategories()
+
+    expect(client.get).toHaveBeenCalledWith('/tickets/categories')
+    expect(categories).toEqual([{ code: 'LOANS', label: 'Loans' }])
+  })
+})
+
+describe('createTicket', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('sends a new question as multipart, with the question as a JSON part', async () => {
+    client.post.mockResolvedValue({ data: { data: { reference: 'PFT654321' } } })
+
+    await me.createTicket(
+      { subject: 'Wrong PF number', details: 'The payslip disagrees.', category: 'EMPLOYEE_DETAILS' },
+      null,
+    )
+
+    const [path, body] = client.post.mock.calls[0]
+    expect(path).toBe('/tickets')
+    expect(body).toBeInstanceOf(FormData)
+    // The API takes the question as a @RequestPart, so it has to be a JSON blob rather than
+    // three form fields -- Spring will not bind a plain string to MemberTicketRequest.
+    expect(body.get('question')).toBeInstanceOf(Blob)
+  })
+
+  it('attaches the file when one is given', async () => {
+    client.post.mockResolvedValue({ data: { data: {} } })
+    const file = new File(['x'], 'proof.pdf', { type: 'application/pdf' })
+
+    await me.createTicket({ subject: 's', details: 'd', category: 'LOANS' }, file)
+
+    const [, body] = client.post.mock.calls[0]
+    expect(body.get('file')).toBe(file)
+  })
+
+  it('omits the file part when none is given', async () => {
+    client.post.mockResolvedValue({ data: { data: {} } })
+
+    await me.createTicket({ subject: 's', details: 'd', category: 'LOANS' }, null)
+
+    const [, body] = client.post.mock.calls[0]
+    expect(body.get('file')).toBeNull()
+  })
+})
+
+describe('replyToTicket', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('sends a reply with the comment as a plain field', async () => {
+    client.post.mockResolvedValue({ data: { data: {} } })
+
+    await me.replyToTicket('abc', 'Here it is', null)
+
+    const [path, body] = client.post.mock.calls[0]
+    expect(path).toBe('/tickets/abc/comments')
+    expect(body.get('comment')).toBe('Here it is')
+  })
+
+  it('attaches the file when one is given', async () => {
+    client.post.mockResolvedValue({ data: { data: {} } })
+    const file = new File(['x'], 'proof.pdf', { type: 'application/pdf' })
+
+    await me.replyToTicket('abc', null, file)
+
+    const [, body] = client.post.mock.calls[0]
+    expect(body.get('file')).toBe(file)
+  })
+
+  it('unwraps the returned ticket', async () => {
+    client.post.mockResolvedValue({ data: { data: { id: 'abc', closed: false } } })
+
+    const ticket = await me.replyToTicket('abc', 'Here it is', null)
+
+    expect(ticket).toEqual({ id: 'abc', closed: false })
+  })
+})
+
+describe('closeTicket', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('closes by id and unwraps the returned ticket', async () => {
+    client.put.mockResolvedValue({ data: { data: { closed: true } } })
+
+    const ticket = await me.closeTicket('abc')
+
+    expect(client.put).toHaveBeenCalledWith('/tickets/abc/close')
+    expect(ticket).toEqual({ closed: true })
+  })
+})
+
+describe('ticketAttachmentUrl', () => {
+  it("builds the attachment's download path from the comment id, for use as an href", () => {
+    expect(me.ticketAttachmentUrl('c1')).toBe(
+      `${import.meta.env.VITE_API_BASE_URL}/api/v1/me/tickets/comments/c1/attachment`,
+    )
   })
 })

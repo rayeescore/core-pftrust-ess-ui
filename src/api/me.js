@@ -45,6 +45,11 @@ const LIVE = new Set([
   'trust',
   'createLoan',
   'uploadDocument',
+  'ticket',
+  'ticketCategories',
+  'createTicket',
+  'replyToTicket',
+  'closeTicket',
 ])
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -181,6 +186,97 @@ export async function getTickets() {
     return fixtures.tickets
   }
   return (await client.get('/tickets')).data.data
+}
+
+/**
+ * One question, with its whole thread.
+ *
+ * Addressed by `id`, which the record only started carrying when the write surface was built -- a list
+ * of questions is a dead end without it. A foreign id is a 403 rather than a 404: the API refuses the
+ * request instead of confirming the id exists.
+ */
+export async function getTicket(id) {
+  if (!isLive('ticket')) {
+    await delay(300)
+    return fixtures.tickets[0]
+  }
+  return (await client.get(`/tickets/${id}`)).data.data
+}
+
+/**
+ * What a question can be about.
+ *
+ * Fetched rather than hard-coded here, so the picker and the thread cannot disagree about what
+ * EMPLOYEE_DETAILS is called. Returns [{ code, label }].
+ */
+export async function getTicketCategories() {
+  if (!isLive('ticketCategories')) {
+    await delay(200)
+    return [
+      { code: 'EMPLOYEE_DETAILS', label: 'Your details' },
+      { code: 'CONTRIBUTIONS', label: 'Contributions' },
+      { code: 'LOANS', label: 'Loans' },
+      { code: 'TRANSFER_INS', label: 'Transfer ins' },
+      { code: 'SETTLEMENTS', label: 'Settlements' },
+    ]
+  }
+  return (await client.get('/tickets/categories')).data.data
+}
+
+/**
+ * Ask the PF department something, with an optional page of proof.
+ *
+ * Multipart, and the question itself goes as a JSON Blob rather than three form fields: the API takes
+ * it as a @RequestPart bound to MemberTicketRequest, and Spring will not bind a plain string to that.
+ */
+export async function createTicket(question, file) {
+  if (!isLive('createTicket')) {
+    await delay(700)
+    return fixtures.tickets[0]
+  }
+
+  const body = new FormData()
+  body.append('question', new Blob([JSON.stringify(question)], { type: 'application/json' }))
+
+  if (file) {
+    body.append('file', file)
+  }
+
+  return (await client.post('/tickets', body)).data.data
+}
+
+/** A reply, which may be words, a page, or both -- but not neither. */
+export async function replyToTicket(id, comment, file) {
+  if (!isLive('replyToTicket')) {
+    await delay(500)
+    return fixtures.tickets[0]
+  }
+
+  const body = new FormData()
+
+  if (comment) {
+    body.append('comment', comment)
+  }
+
+  if (file) {
+    body.append('file', file)
+  }
+
+  return (await client.post(`/tickets/${id}/comments`, body)).data.data
+}
+
+/** "This is settled." The member's own judgement, and only on their own question. */
+export async function closeTicket(id) {
+  if (!isLive('closeTicket')) {
+    await delay(400)
+    return { ...fixtures.tickets[0], closed: true }
+  }
+  return (await client.put(`/tickets/${id}/close`)).data.data
+}
+
+/** Where an attachment is fetched from. Used as an href, so it is a path rather than a call. */
+export function ticketAttachmentUrl(attachmentId) {
+  return `${import.meta.env.VITE_API_BASE_URL}/api/v1/me/tickets/comments/${attachmentId}/attachment`
 }
 
 /**
