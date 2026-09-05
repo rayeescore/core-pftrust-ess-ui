@@ -25,12 +25,18 @@ const selectedId = ref(null)
 const asking = ref(false)
 const draft = ref({ subject: '', details: '', category: '' })
 const draftFile = ref(null)
+const draftFileInput = ref(null)
 
 const reply = ref('')
 const replyFile = ref(null)
+const replyFileInput = ref(null)
 
 const busy = ref(false)
-const error = ref('')
+// Two refs, not one -- a member with no tickets at all has no thread panel, so an ask-form error
+// rendered in the footer would render nowhere, and a reply-box error would otherwise land beside
+// whichever thread happens to be selected rather than the form that actually failed.
+const askError = ref('')
+const replyError = ref('')
 
 const selected = computed(() => tickets.value?.find((ticket) => ticket.id === selectedId.value))
 
@@ -52,8 +58,9 @@ function absorb(updated) {
   selectedId.value = updated.id
 }
 
-/** Every write goes through here, so one failure path serves all three. */
-async function run(action) {
+/** Every write goes through here, so one failure path serves all three -- but the message lands
+ *  beside the control that failed, which means the caller says where. */
+async function run(action, error) {
   busy.value = true
   error.value = ''
   try {
@@ -70,13 +77,41 @@ async function run(action) {
   }
 }
 
+function toggleAsk() {
+  asking.value = !asking.value
+  // A stale refusal from a form that was abandoned and reopened should not reappear unearned.
+  if (!asking.value) askError.value = ''
+}
+
+function chooseDraftFile() {
+  draftFileInput.value?.click()
+}
+
+function draftFileChosen(event) {
+  const file = event.target.files?.[0]
+  if (file) draftFile.value = file
+  // Cleared so choosing the same file twice in a row still fires a change event -- which is exactly
+  // what a member does after a failed send.
+  event.target.value = ''
+}
+
+function chooseReplyFile() {
+  replyFileInput.value?.click()
+}
+
+function replyFileChosen(event) {
+  const file = event.target.files?.[0]
+  if (file) replyFile.value = file
+  event.target.value = ''
+}
+
 async function ask() {
   if (!draft.value.subject.trim() || !draft.value.details.trim() || !draft.value.category) {
-    error.value = 'A subject, a category and your question — all three.'
+    askError.value = 'A subject, a category and your question — all three.'
     return
   }
 
-  const sent = await run(() => me.createTicket({ ...draft.value }, draftFile.value))
+  const sent = await run(() => me.createTicket({ ...draft.value }, draftFile.value), askError)
 
   if (sent) {
     asking.value = false
@@ -87,11 +122,14 @@ async function ask() {
 
 async function send() {
   if (!reply.value.trim() && !replyFile.value) {
-    error.value = 'Write something, or attach a page, before sending.'
+    replyError.value = 'Write something, or attach a page, before sending.'
     return
   }
 
-  const sent = await run(() => me.replyToTicket(selectedId.value, reply.value, replyFile.value))
+  const sent = await run(
+    () => me.replyToTicket(selectedId.value, reply.value, replyFile.value),
+    replyError,
+  )
 
   if (sent) {
     reply.value = ''
@@ -100,7 +138,7 @@ async function send() {
 }
 
 async function settle() {
-  await run(() => me.closeTicket(selectedId.value))
+  await run(() => me.closeTicket(selectedId.value), replyError)
 }
 
 const attachmentUrl = me.ticketAttachmentUrl
@@ -120,7 +158,7 @@ const attachmentUrl = me.ticketAttachmentUrl
       <div class="flex flex-col gap-2.5">
         <button
           class="flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-brand-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
-          @click="asking = !asking"
+          @click="toggleAsk"
         >
           <AppIcon :name="asking ? 'x' : 'plus'" :size="17" />
           {{ asking ? 'Never mind' : 'Ask a question' }}
@@ -162,18 +200,25 @@ const attachmentUrl = me.ticketAttachmentUrl
             />
           </label>
 
-          <label class="flex min-h-11 cursor-pointer items-center gap-2 text-[12.5px] font-medium text-ink-muted hover:text-ink">
+          <button
+            type="button"
+            class="flex min-h-11 items-center gap-2 text-[12.5px] font-medium text-ink-muted hover:text-ink"
+            @click="chooseDraftFile"
+          >
             <AppIcon name="upload" :size="15" />
             <span>{{ draftFile ? draftFile.name : 'Attach a page (optional)' }}</span>
-            <input
-              type="file"
-              class="hidden"
-              accept="application/pdf,image/jpeg,image/png"
-              @change="draftFile = $event.target.files[0] ?? null"
-            />
-          </label>
+          </button>
+          <input
+            ref="draftFileInput"
+            type="file"
+            class="hidden"
+            accept="application/pdf,image/jpeg,image/png"
+            @change="draftFileChosen"
+          />
 
           <p class="text-[11.5px] text-ink-faint">A PDF or a photograph, up to 5 MB.</p>
+
+          <p v-if="askError" class="text-[12.5px] text-danger-700">{{ askError }}</p>
 
           <button
             type="submit"
@@ -269,19 +314,24 @@ const attachmentUrl = me.ticketAttachmentUrl
             class="w-full resize-none rounded-[10px] border border-border-strong bg-surface px-3.5 py-3 text-sm outline-none"
           />
 
-          <p v-if="error" class="mt-2 text-[12.5px] text-danger-700">{{ error }}</p>
+          <p v-if="replyError" class="mt-2 text-[12.5px] text-danger-700">{{ replyError }}</p>
 
           <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <label class="flex min-h-11 cursor-pointer items-center gap-2 text-[12.5px] font-medium text-ink-muted hover:text-ink">
+            <button
+              type="button"
+              class="flex min-h-11 items-center gap-2 text-[12.5px] font-medium text-ink-muted hover:text-ink"
+              @click="chooseReplyFile"
+            >
               <AppIcon name="upload" :size="15" />
               <span>{{ replyFile ? replyFile.name : 'Attach a file' }}</span>
-              <input
-                type="file"
-                class="hidden"
-                accept="application/pdf,image/jpeg,image/png"
-                @change="replyFile = $event.target.files[0] ?? null"
-              />
-            </label>
+            </button>
+            <input
+              ref="replyFileInput"
+              type="file"
+              class="hidden"
+              accept="application/pdf,image/jpeg,image/png"
+              @change="replyFileChosen"
+            />
 
             <div class="flex items-center gap-3">
               <button
