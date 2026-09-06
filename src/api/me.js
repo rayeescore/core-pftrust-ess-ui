@@ -50,6 +50,7 @@ const LIVE = new Set([
   'createTicket',
   'replyToTicket',
   'closeTicket',
+  'ticketAttachment',
 ])
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -274,9 +275,21 @@ export async function closeTicket(id) {
   return (await client.put(`/tickets/${id}/close`)).data.data
 }
 
-/** Where an attachment is fetched from. Used as an href, so it is a path rather than a call. */
-export function ticketAttachmentUrl(attachmentId) {
-  return `${import.meta.env.VITE_API_BASE_URL}/api/v1/me/tickets/comments/${attachmentId}/attachment`
+/**
+ * One page attached to a message, fetched rather than linked.
+ *
+ * A plain <a href> would be a top-level navigation, which carries no Authorization header -- and this
+ * API is bearer-only with no cookie session, so the browser would land on a 401 and a blank tab. So
+ * the file comes back through the same authenticated client as everything else, and the caller turns
+ * it into an object URL.
+ */
+export async function getTicketAttachment(attachmentId) {
+  if (!isLive('ticketAttachment')) {
+    await delay(300)
+    return new Blob(['fixture'], { type: 'application/pdf' })
+  }
+  return (await client.get(`/tickets/comments/${attachmentId}/attachment`, { responseType: 'blob' }))
+    .data
 }
 
 /**

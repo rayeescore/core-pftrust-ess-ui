@@ -149,6 +149,9 @@ describe('createTicket', () => {
     // The API takes the question as a @RequestPart, so it has to be a JSON blob rather than
     // three form fields -- Spring will not bind a plain string to MemberTicketRequest.
     expect(body.get('question')).toBeInstanceOf(Blob)
+    // The MIME type is the binding contract, not a formality -- @RequestPart resolves by content
+    // type, and the wrong one is a 415 that a shape-only assertion would never catch.
+    expect(body.get('question').type).toBe('application/json')
   })
 
   it('attaches the file when one is given', async () => {
@@ -216,10 +219,18 @@ describe('closeTicket', () => {
   })
 })
 
-describe('ticketAttachmentUrl', () => {
-  it("builds the attachment's download path from the comment id, for use as an href", () => {
-    expect(me.ticketAttachmentUrl('c1')).toBe(
-      `${import.meta.env.VITE_API_BASE_URL}/api/v1/me/tickets/comments/c1/attachment`,
-    )
+describe('getTicketAttachment', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('fetches the attachment as a blob through the authenticated client', async () => {
+    const blob = new Blob(['pdf bytes'], { type: 'application/pdf' })
+    client.get.mockResolvedValue({ data: blob })
+
+    const result = await me.getTicketAttachment('c1')
+
+    expect(client.get).toHaveBeenCalledWith('/tickets/comments/c1/attachment', {
+      responseType: 'blob',
+    })
+    expect(result).toBe(blob)
   })
 })
