@@ -42,6 +42,9 @@ const paths = {
   file: ['M10.4 2.6H5a1.4 1.4 0 0 0-1.4 1.4v10a1.4 1.4 0 0 0 1.4 1.4h8a1.4 1.4 0 0 0 1.4-1.4V6.6z', 'M10.4 2.6v4h4'],
   lock: ['M5.2 8V6a3.8 3.8 0 0 1 7.6 0v2', 'M4.2 8h9.6v6.2H4.2z'],
   arrowLeftSmall: ['m10 3.5-4.5 4.5L10 12.5'],
+  // Dismiss. Drawn to match `plus` rather than a rotated copy of it -- the two swap in the same
+  // slot (Ask a question / Never mind), and a form can be abandoned from more than one place.
+  x: ['M6.2 6.2l5.6 5.6M11.8 6.2l-5.6 5.6'],
 }
 
 /** Glyphs whose shape needs a circle the path syntax above cannot express. */
@@ -52,6 +55,7 @@ const circles = {
   info: { cx: 9, cy: 9, r: 7.2 },
   clock: { cx: 8, cy: 8, r: 6.4 },
   plus: { cx: 9, cy: 9, r: 6.4 },
+  x: { cx: 9, cy: 9, r: 6.4 },
   globe: { cx: 8, cy: 8, r: 6.3 },
 }
 
