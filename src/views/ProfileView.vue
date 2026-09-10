@@ -1,27 +1,66 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 import * as me from '@/api/me'
+import AppBanner from '@/components/ui/AppBanner.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import StatusChip from '@/components/ui/StatusChip.vue'
 import DetailRow from '@/components/product/DetailRow.vue'
 
 /**
  * Everything the trust holds about the member — and, crucially, **read only**.
  *
- * That is not a shortcut. Employees are created by the SAP import and there is no PUT, PATCH or DELETE
- * anywhere on EmployeeController: no endpoint exists to change a name, address, nominee, bank account
- * or phone number. So every field offers a *correction request* rather than an input, and the request
- * is a new object that still has to be built (§2.4 of the brief).
+ * That is not a shortcut. Employees are created by the SAP import and the only way any of it changes is
+ * a *correction request* the PF department reviews and applies. So every field offers one rather than
+ * an input, and what has already been asked for sits at the top: a member who has raised a request
+ * should not be invited to raise it again as though nothing happened, and a refusal's reason is the
+ * whole point of storing one.
  *
  * The nominee total is the one validation a member can actually fail, and it is why the dashboard shows
  * a warning. Saying what happens if it stays unassigned — the share is decided by law rather than by
  * them — is the part that makes somebody act on it.
  */
+const router = useRouter()
+
 const profile = ref(null)
+const requests = ref([])
+const withdrawing = ref(null)
+const requestError = ref('')
 
 onMounted(async () => {
-  profile.value = await me.getProfile()
+  const [loadedProfile, loadedRequests] = await Promise.all([me.getProfile(), me.getChangeRequests()])
+  profile.value = loadedProfile
+  requests.value = loadedRequests
 })
+
+/** `pending` comes from the API -- the label is written for people and is not something to branch on. */
+const pending = computed(() => requests.value.filter((request) => request.pending))
+const decided = computed(() => requests.value.filter((request) => !request.pending).slice(0, 3))
+
+/** "Mobile number, Nominee · Rohan Deshmukh" -- the labels are the server's, so two screens agree. */
+function summary(request) {
+  return request.items
+    .map((item) => (item.subject ? `${item.label} · ${item.subject}` : item.label))
+    .join(', ')
+}
+
+function correct() {
+  router.push('/profile/corrections')
+}
+
+async function withdraw(request) {
+  withdrawing.value = request.id
+  requestError.value = ''
+  try {
+    const updated = await me.withdrawChangeRequest(request.id)
+    requests.value = requests.value.map((each) => (each.id === updated.id ? updated : each))
+  } catch (failure) {
+    requestError.value =
+      failure.response?.data?.message ?? 'That did not go through. Try again in a moment.'
+  } finally {
+    withdrawing.value = null
+  }
+}
 </script>
 
 <template>
@@ -33,6 +72,30 @@ onMounted(async () => {
         these in step with payroll — ask them to change anything that is wrong.
       </p>
     </header>
+
+    <!-- What has already been asked for, before the details it is about. -->
+    <AppBanner
+      v-for="request in pending"
+      :key="request.id"
+      tone="info"
+      :title="`A correction is under review — asked ${request.raisedOn}`"
+    >
+      {{ summary(request) }}
+      <template #action>
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            :disabled="withdrawing === request.id"
+            class="min-h-11 rounded-lg border border-border-strong bg-surface px-3.5 text-[12.5px] font-semibold transition-colors hover:bg-surface-sub disabled:opacity-60"
+            @click="withdraw(request)"
+          >
+            {{ withdrawing === request.id ? 'Withdrawing…' : 'Withdraw it' }}
+          </button>
+          <span v-if="request.hasAttachment" class="text-[12px] text-ink-muted">Proof attached</span>
+        </div>
+      </template>
+    </AppBanner>
+    <p v-if="requestError" class="text-[12.5px] text-danger-700">{{ requestError }}</p>
 
     <div class="grid items-start gap-5 lg:grid-cols-[1.3fr_1fr]">
       <div class="flex flex-col gap-5">
@@ -50,9 +113,20 @@ onMounted(async () => {
           <DetailRow label="Date of birth" :value="profile.dateOfBirth" />
           <DetailRow label="PAN" :value="profile.pan" mono reveal />
           <DetailRow label="Aadhaar" :value="profile.aadhaar" mono reveal />
-          <DetailRow label="Mobile" :value="profile.mobile" action="Change" />
-          <DetailRow label="Email" :value="profile.email" action="Change" />
-          <DetailRow label="Alternate mobile" :value="profile.alternateMobile" action="Add" />
+          <DetailRow label="Mobile" :value="profile.mobile" action="Change" @action="correct" />
+          <DetailRow label="Email" :value="profile.email" action="Change" @action="correct" />
+          <DetailRow
+            label="Alternate mobile"
+            :value="profile.alternateMobile"
+            :action="profile.alternateMobile ? 'Change' : 'Add'"
+            @action="correct"
+          />
+          <DetailRow
+            label="Alternate email"
+            :value="profile.alternateEmail"
+            :action="profile.alternateEmail ? 'Change' : 'Add'"
+            @action="correct"
+          />
         </section>
 
         <section class="rounded-card border border-border bg-surface px-6 py-5">
@@ -158,15 +232,44 @@ onMounted(async () => {
               >Request a change</RouterLink
             >
           </div>
-          <p class="text-[14.5px] font-medium">{{ profile.bank.name }}</p>
-          <p class="text-[13px] text-ink-muted">{{ profile.bank.branch }}</p>
-          <p class="mt-2 font-mono text-[13px]">{{ profile.bank.account }}</p>
-          <p class="font-mono text-[12.5px] text-ink-muted">{{ profile.bank.codes }}</p>
+          <template v-if="profile.bank">
+            <p class="text-[14.5px] font-medium">{{ profile.bank.name }}</p>
+            <p class="text-[13px] text-ink-muted">{{ profile.bank.branch }}</p>
+            <p class="mt-2 font-mono text-[13px]">{{ profile.bank.account }}</p>
+            <p class="font-mono text-[12.5px] text-ink-muted">{{ profile.bank.codes }}</p>
+          </template>
+          <!-- A member SAP sent no bank row for. The trust's gap, and a correction is how it is closed. -->
+          <p v-else class="text-[13px] text-ink-faint italic">
+            Not on record. Send us your account details and a cancelled cheque.
+          </p>
 
           <p class="mt-3 flex items-start gap-2 rounded-lg bg-surface-sub px-3 py-2.5 text-xs leading-[1.5] text-ink-muted">
             <AppIcon name="lock" :size="14" class="mt-px shrink-0" />
             A bank change is verified against a cancelled cheque before any money moves.
           </p>
+        </section>
+
+        <!-- A refusal's reason is why one is stored. It sits here, where the member looks. -->
+        <section v-if="decided.length" class="rounded-card border border-border bg-surface px-6 py-5">
+          <h2 class="eyebrow mb-3">Corrections you asked for</h2>
+          <div class="flex flex-col gap-3">
+            <div
+              v-for="request in decided"
+              :key="request.id"
+              class="flex flex-col gap-1.5 border-b border-border-subtle pb-3 last:border-0 last:pb-0"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <p class="text-[13px] leading-[1.5]">{{ summary(request) }}</p>
+                <StatusChip :label="request.status.label" :tone="request.status.tone" />
+              </div>
+              <p class="tabular text-[11.5px] text-ink-faint">
+                Asked {{ request.raisedOn }}<span v-if="request.decidedOn"> · decided {{ request.decidedOn }}</span>
+              </p>
+              <p v-if="request.decisionReason" class="text-[12.5px] leading-[1.5] text-ink-muted">
+                {{ request.decisionReason }}
+              </p>
+            </div>
+          </div>
         </section>
       </aside>
     </div>
