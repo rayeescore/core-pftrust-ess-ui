@@ -182,10 +182,13 @@ function fileChosen(event) {
 
 function addNominee() {
   const name = trimmed(newNominee.value.name)
+  const relationship = trimmed(newNominee.value.relationship)
   const share = trimmed(newNominee.value.share)
 
-  if (!name || !share) {
-    error.value = 'A nominee needs a name and a share.'
+  // All three. The relationship is not decoration: the trust's nominee record cannot be saved without
+  // one, and the API refuses an addition that lacks it rather than letting approval fail.
+  if (!name || !relationship || !share) {
+    error.value = 'A nominee needs a name, a relationship and a share.'
     return
   }
 
@@ -196,7 +199,7 @@ function addNominee() {
 
   nominees.value.push({
     name,
-    relationship: trimmed(newNominee.value.relationship),
+    relationship,
     current: null,
     proposed: share,
     removed: false,
@@ -332,7 +335,7 @@ async function send() {
                 <span class="text-[11.5px] text-ink-faint">Relationship</span>
                 <input
                   v-model="newNominee.relationship"
-                  placeholder="Daughter, spouse…"
+                  placeholder="Daughter, spouse, mother…"
                   class="min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-sm outline-none"
                 />
               </label>

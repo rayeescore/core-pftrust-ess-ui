@@ -48,6 +48,25 @@ function correct() {
   router.push('/profile/corrections')
 }
 
+/**
+ * The proof the member attached, so they can check they sent the right page.
+ *
+ * Fetched through the authenticated client and handed to the browser as an object URL, never as a
+ * plain link -- the API is bearer-only, so an <a href> would land on a 401 in a blank tab.
+ */
+async function openProof(request) {
+  requestError.value = ''
+  try {
+    const blob = await me.getChangeRequestAttachment(request.id)
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  } catch (failure) {
+    requestError.value =
+      failure.response?.data?.message ?? 'Could not open that attachment. Try again in a moment.'
+  }
+}
+
 async function withdraw(request) {
   withdrawing.value = request.id
   requestError.value = ''
@@ -91,7 +110,14 @@ async function withdraw(request) {
           >
             {{ withdrawing === request.id ? 'Withdrawing…' : 'Withdraw it' }}
           </button>
-          <span v-if="request.hasAttachment" class="text-[12px] text-ink-muted">Proof attached</span>
+          <button
+            v-if="request.hasAttachment"
+            type="button"
+            class="min-h-11 text-[12.5px] font-medium text-brand-600 hover:text-brand-700"
+            @click="openProof(request)"
+          >
+            View the proof you sent
+          </button>
         </div>
       </template>
     </AppBanner>
