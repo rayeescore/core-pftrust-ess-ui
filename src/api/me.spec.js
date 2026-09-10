@@ -234,3 +234,60 @@ describe('getTicketAttachment', () => {
     expect(result).toBe(blob)
   })
 })
+
+describe('change requests', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('sends the request as JSON and the proof as a file, in one multipart body', async () => {
+    client.post.mockResolvedValue({ data: { data: { id: 'cr-1' } } })
+    const file = new File(['cheque'], 'cheque.pdf', { type: 'application/pdf' })
+
+    await me.createChangeRequest(
+      { note: 'the number changed', items: [{ field: 'BANK_IFSC', requestedValue: 'ICIC0002' }] },
+      file,
+    )
+
+    const [path, body] = client.post.mock.calls[0]
+    expect(path).toBe('/change-requests')
+    expect(body).toBeInstanceOf(FormData)
+    // @RequestPart binds by content type, so the request has to be a JSON blob, not form fields.
+    expect(body.get('request')).toBeInstanceOf(Blob)
+    expect(body.get('request').type).toBe('application/json')
+    expect(body.get('file')).toBe(file)
+  })
+
+  it('omits the file part when there is no proof to send', async () => {
+    client.post.mockResolvedValue({ data: { data: {} } })
+
+    await me.createChangeRequest({ items: [{ field: 'MOBILE', requestedValue: '98812 47730' }] }, null)
+
+    expect(client.post.mock.calls[0][1].get('file')).toBeNull()
+  })
+
+  it('names no member in any change-request path', async () => {
+    client.get.mockResolvedValue({ data: { data: [] } })
+    client.put.mockResolvedValue({ data: { data: {} } })
+
+    await me.getChangeRequests()
+    await me.getChangeRequest('cr-1')
+    await me.withdrawChangeRequest('cr-1')
+
+    expect(client.get.mock.calls.map((call) => call[0])).toEqual([
+      '/change-requests',
+      '/change-requests/cr-1',
+    ])
+    expect(client.put.mock.calls[0][0]).toBe('/change-requests/cr-1/withdraw')
+  })
+
+  it('fetches proof as a blob rather than linking to it', async () => {
+    const blob = new Blob(['x'], { type: 'application/pdf' })
+    client.get.mockResolvedValue({ data: blob })
+
+    const result = await me.getChangeRequestAttachment('cr-1')
+
+    expect(client.get).toHaveBeenCalledWith('/change-requests/cr-1/attachment', {
+      responseType: 'blob',
+    })
+    expect(result).toBe(blob)
+  })
+})

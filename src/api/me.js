@@ -51,6 +51,11 @@ const LIVE = new Set([
   'replyToTicket',
   'closeTicket',
   'ticketAttachment',
+  'changeRequests',
+  'changeRequest',
+  'createChangeRequest',
+  'withdrawChangeRequest',
+  'changeRequestAttachment',
 ])
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -343,4 +348,73 @@ export async function uploadDocument(file) {
   const body = new FormData()
   body.append('file', file)
   return (await client.post('/documents/upload', body)).data.data
+}
+
+/**
+ * Corrections this member has asked for.
+ *
+ * Their details come from payroll and there is no endpoint that edits one -- so "update my details" is
+ * a request the PF department reviews, not a form that saves. This is the list of those requests.
+ */
+export async function getChangeRequests() {
+  if (!isLive('changeRequests')) {
+    await delay(300)
+    return fixtures.changeRequests ?? []
+  }
+  return (await client.get('/change-requests')).data.data
+}
+
+/** One request, with its before-and-after diff. */
+export async function getChangeRequest(id) {
+  if (!isLive('changeRequest')) {
+    await delay(250)
+    return (fixtures.changeRequests ?? [])[0] ?? null
+  }
+  return (await client.get(`/change-requests/${id}`)).data.data
+}
+
+/**
+ * Ask for a correction.
+ *
+ * Multipart, because a nominee or bank change has to come with proof -- the server refuses one without
+ * it and says which document it wants, so this does not duplicate that rule, it just carries the file.
+ */
+export async function createChangeRequest(request, file) {
+  if (!isLive('createChangeRequest')) {
+    await delay(700)
+    return { id: 'fixture', status: { label: 'Under review', tone: 'info' } }
+  }
+
+  const body = new FormData()
+  body.append('request', new Blob([JSON.stringify(request)], { type: 'application/json' }))
+
+  if (file) {
+    body.append('file', file)
+  }
+
+  return (await client.post('/change-requests', body)).data.data
+}
+
+/** Take a request back before the department has answered it. */
+export async function withdrawChangeRequest(id) {
+  if (!isLive('withdrawChangeRequest')) {
+    await delay(400)
+    return { id, status: { label: 'Withdrawn', tone: 'muted' } }
+  }
+  return (await client.put(`/change-requests/${id}/withdraw`)).data.data
+}
+
+/**
+ * The proof the member attached, so they can check they sent the right page.
+ *
+ * A blob rather than a link, for the same reason as a ticket attachment: this API is bearer-only with
+ * no cookie session, so an <a href> would be a top-level navigation with no Authorization header and
+ * would land the member on a 401 in a blank tab.
+ */
+export async function getChangeRequestAttachment(id) {
+  if (!isLive('changeRequestAttachment')) {
+    await delay(300)
+    return new Blob(['fixture'], { type: 'application/pdf' })
+  }
+  return (await client.get(`/change-requests/${id}/attachment`, { responseType: 'blob' })).data
 }

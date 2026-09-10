@@ -17,6 +17,9 @@ defineProps({
   reveal: { type: Boolean, default: false },
 })
 
+/** `action` is a label; what it does is the parent's business, and on the profile it is a correction. */
+const emit = defineEmits(['action'])
+
 const shown = ref(false)
 </script>
 
@@ -44,7 +47,9 @@ const shown = ref(false)
     </button>
     <button
       v-else-if="action"
-      class="shrink-0 text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
+      type="button"
+      class="min-h-11 shrink-0 text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
+      @click="emit('action')"
     >
       {{ action }}
     </button>
