@@ -281,7 +281,10 @@ const quickActions = [
             <StatusChip :label="application.status.label" :tone="application.status.tone" />
           </div>
 
-          <ApplicationProgress :completed="application.completedSteps" />
+          <ApplicationProgress
+            :completed="application.completedSteps"
+            :total="application.kind === 'TRANSFER_IN' ? 3 : 4"
+          />
 
           <div class="flex flex-wrap items-end justify-between gap-4">
             <p class="flex-1 text-[12.5px] leading-[1.5] text-ink-muted">{{ application.note }}</p>
