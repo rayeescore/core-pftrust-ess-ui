@@ -114,8 +114,14 @@ export const alerts = [
   },
 ]
 
+/** GET /api/v1/me/statements. No version id: the server picks the published version by year. */
 export const statements = {
-  latestAnnual: { endingYear: 2026, published: true },
+  annual: [{ year: 2026, publishedOn: '04-09-2026' }],
+  monthly: [
+    { year: 2027, inProgress: true },
+    { year: 2026, inProgress: false },
+  ],
+  loanHistory: true,
 }
 
 /**
@@ -359,6 +365,7 @@ export const loan = {
   // Two milestones behind, the third in flight -- the same figure MemberStatus.completedSteps derives
   // from PENDING_FINAL_APPROVAL. Without it the progress bar contradicted the chip beside it.
   completedSteps: 2,
+  receipt: false,
   steps: [
     { label: 'Submitted', when: '02 Aug 2026', state: 'done' },
     { label: 'Checked and approved', when: '18 Aug 2026', state: 'done' },

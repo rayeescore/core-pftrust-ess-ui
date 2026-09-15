@@ -65,6 +65,11 @@ const LIVE = new Set([
   'claim',
   'createClaim',
   'documentFile',
+  'statements',
+  'monthlyStatement',
+  'annualStatement',
+  'loanHistory',
+  'loanReceipt',
 ])
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -526,4 +531,63 @@ export async function getDocumentFile(id) {
     return new Blob(['fixture'], { type: 'application/pdf' })
   }
   return (await client.get(`/documents/${id}`, { responseType: 'blob' })).data
+}
+
+/**
+ * A generated PDF: the file and the name the API gave it. X-Suggested-Filename is exposed by the API's
+ * CORS configuration; the fallback covers fixture mode and a proxy that strips the header.
+ */
+function asDownload(response, fallback) {
+  return { blob: response.data, filename: response.headers?.['x-suggested-filename'] ?? fallback }
+}
+
+function fixtureDownload(filename) {
+  return { blob: new Blob(['fixture'], { type: 'application/pdf' }), filename }
+}
+
+/** What the member can download: published annual statements, contributed years, the loan history. */
+export async function getStatements() {
+  if (!isLive('statements')) {
+    await delay(250)
+    return fixtures.statements
+  }
+  return (await client.get('/statements')).data.data
+}
+
+/** The monthly statement for a financial year the member contributed in. */
+export async function getMonthlyStatement(year) {
+  const fallback = `monthly_statement_${year}.pdf`
+  if (!isLive('monthlyStatement')) {
+    await delay(300)
+    return fixtureDownload(fallback)
+  }
+  return asDownload(await client.get('/statements/monthly', { params: { year }, responseType: 'blob' }), fallback)
+}
+
+/** The published annual statement for a financial year. By year alone: the server picks the version. */
+export async function getAnnualStatement(year) {
+  const fallback = `annual_statement_${year}.pdf`
+  if (!isLive('annualStatement')) {
+    await delay(300)
+    return fixtureDownload(fallback)
+  }
+  return asDownload(await client.get('/statements/annual', { params: { year }, responseType: 'blob' }), fallback)
+}
+
+/** Every paid advance, as the trust's loan history sheet. */
+export async function getLoanHistory() {
+  if (!isLive('loanHistory')) {
+    await delay(300)
+    return fixtureDownload('loan_history.pdf')
+  }
+  return asDownload(await client.get('/loans/history', { responseType: 'blob' }), 'loan_history.pdf')
+}
+
+/** The receipt for one paid advance. Somebody else's id is a 403; an unpaid one a 404. */
+export async function getLoanReceipt(id) {
+  if (!isLive('loanReceipt')) {
+    await delay(300)
+    return fixtureDownload('loan_receipt.pdf')
+  }
+  return asDownload(await client.get(`/loans/${id}/receipt`, { responseType: 'blob' }), 'loan_receipt.pdf')
 }
