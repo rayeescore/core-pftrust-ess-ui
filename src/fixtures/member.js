@@ -511,3 +511,47 @@ export const transferIn = {
   ],
   documents: { annexureK: false, dispatchLetter: false },
 }
+
+export const claimTypes = [
+  { code: '02', title: 'Retirement VRS', kind: 'PAYOUT', documents: [{ name: 'Form 19', detail: 'PDF or JPG, up to 5 MB', state: 'required' }] },
+  { code: '03', title: 'Retirement Normal', kind: 'PAYOUT', documents: [{ name: 'Form 19', detail: 'PDF or JPG, up to 5 MB', state: 'required' }] },
+  {
+    code: '04',
+    title: 'Resignation',
+    kind: 'PAYOUT',
+    documents: [
+      { name: 'Form 19', detail: 'PDF or JPG, up to 5 MB', state: 'required' },
+      { name: 'Pan Card', detail: 'PDF or JPG, up to 5 MB', state: 'required' },
+      { name: 'Cancelled Cheque', detail: 'PDF or JPG, up to 5 MB', state: 'required' },
+      { name: 'Bank Passbook', detail: 'PDF or JPG, up to 5 MB', state: 'required' },
+    ],
+  },
+  { code: '06', title: 'RPFC', kind: 'TRANSFER', documents: [{ name: 'Form 13', detail: 'PDF or JPG, up to 5 MB', state: 'required' }] },
+  { code: '07', title: 'TRUST', kind: 'TRANSFER', documents: [{ name: 'Form 13', detail: 'PDF or JPG, up to 5 MB', state: 'required' }] },
+]
+
+// Shaped exactly like MemberClaimRecord: accepted, so the amount the worksheet computed is present.
+export const claim = {
+  id: 'claim-fixture',
+  reference: '2027000012',
+  title: 'Resignation',
+  kind: 'PAYOUT',
+  appliedOn: '02-09-2026',
+  lastWorkingDay: '31-08-2026',
+  status: { label: 'Under review', tone: 'info' },
+  completedSteps: 1,
+  steps: [
+    { label: 'Submitted', when: '02-09-2026', state: 'done' },
+    { label: 'Accepted and under review', when: 'In progress', state: 'current' },
+    { label: 'Final approval', when: 'Not yet', state: 'todo' },
+    { label: 'Paid to your bank', when: 'Not yet', state: 'todo' },
+  ],
+  note: 'Accepted, and the amount is worked out. Two people approve it before it is paid.',
+  amount: { label: 'To be paid to you', value: '2890363.40' },
+  details: [
+    { label: 'Last working day', value: '31-08-2026' },
+    { label: 'Paid to', value: 'HDFC Bank · XXXXXXXXXX4471' },
+    { label: 'Your address', value: 'Flat 302, Shreeji Residency, Nashik Road' },
+  ],
+  documents: [{ id: 'doc-fixture', name: 'Form 19' }],
+}

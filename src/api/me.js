@@ -60,6 +60,11 @@ const LIVE = new Set([
   'transferIn',
   'createTransferIn',
   'transferInDocument',
+  'claimTypes',
+  'claims',
+  'claim',
+  'createClaim',
+  'documentFile',
 ])
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -471,4 +476,54 @@ export async function getTransferInDocument(id, kind) {
     return new Blob(['fixture'], { type: 'application/pdf' })
   }
   return (await client.get(`/transfer-ins/${id}/documents/${kind}`, { responseType: 'blob' })).data
+}
+
+/** The kinds of claim a member can raise, each with the documents the trust asks for. */
+export async function getClaimTypes() {
+  if (!isLive('claimTypes')) {
+    await delay(250)
+    return fixtures.claimTypes
+  }
+  return (await client.get('/settlements/types')).data.data
+}
+
+/** The member's own claims, newest first. */
+export async function getClaims() {
+  if (!isLive('claims')) {
+    await delay(300)
+    return []
+  }
+  return (await client.get('/settlements')).data.data
+}
+
+/** One claim, by its own id. Somebody else's id is a 403. */
+export async function getClaim(id) {
+  if (!isLive('claim')) {
+    await delay(300)
+    return fixtures.claim
+  }
+  return (await client.get(`/settlements/${id}`)).data.data
+}
+
+/**
+ * Raise a payout or transfer-out claim.
+ *
+ * No bank account and no PAN in it: both are copied from the record server-side, so a claim cannot be
+ * sent to an account typed here. A second open claim is a 409 whose message names the first.
+ */
+export async function createClaim(request) {
+  if (!isLive('createClaim')) {
+    await delay(700)
+    return fixtures.claim
+  }
+  return (await client.post('/settlements', request)).data.data
+}
+
+/** A document the member attached, as a blob — this API is bearer-only, so a plain link would 401. */
+export async function getDocumentFile(id) {
+  if (!isLive('documentFile')) {
+    await delay(300)
+    return new Blob(['fixture'], { type: 'application/pdf' })
+  }
+  return (await client.get(`/documents/${id}`, { responseType: 'blob' })).data
 }
