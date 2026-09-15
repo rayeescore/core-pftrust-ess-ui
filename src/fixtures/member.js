@@ -90,11 +90,11 @@ export const applications = [
     kind: 'TRANSFER_IN',
     title: 'Transfer in · Bharat Forge Ltd PF Trust',
     reference: 'TI/2026-27/0042',
-    status: { label: 'Under review', tone: 'info' },
-    note: 'We have written to your previous trust for Annexure K. This normally takes a few months — nothing is needed from you until it arrives.',
+    status: { label: 'Accepted — waiting for your previous fund', tone: 'info' },
+    note: 'The trust has written to your previous fund for Annexure K. Three to six months is normal, and it is out of the trust’s hands.',
     amountLabel: null,
     amount: null,
-    completedSteps: 1,
+    completedSteps: 2,
     steps: [
       { label: 'Submitted', date: '14-04-2026' },
       { label: 'Under review', since: '20-04-2026' },
@@ -487,4 +487,27 @@ export const trust = {
     { name: 'Trustee — employer nominee', since: '01-07-2021' },
     { name: 'Trustee — member nominee', since: '01-07-2021' },
   ],
+}
+
+// Shaped exactly like MemberTransferInRecord: status in words, three steps, dates as dd-MM-yyyy.
+export const transferIn = {
+  id: 'ti-fixture',
+  reference: '2026000042',
+  employer: 'Bharat Forge Ltd',
+  appliedOn: '14-04-2026',
+  status: { label: 'Accepted — waiting for your previous fund', tone: 'info' },
+  completedSteps: 2,
+  steps: [
+    { label: 'Submitted', when: '14-04-2026', state: 'done' },
+    { label: 'Accepted — the trust writes to your previous fund', when: 'Done', state: 'done' },
+    { label: 'Credited to your account', when: 'In progress', state: 'current' },
+  ],
+  note: 'The trust has written to your previous fund for Annexure K. Three to six months is normal, and it is out of the trust’s hands.',
+  details: [
+    { label: 'Your PF number there', value: 'MH/PUN/0883421/000/0009341' },
+    { label: 'The account was with', value: 'The employer’s own trust' },
+    { label: 'You joined them', value: '12-08-2004' },
+    { label: 'You left them', value: '30-06-2007' },
+  ],
+  documents: { annexureK: false, dispatchLetter: false },
 }
