@@ -218,7 +218,7 @@ async function send() {
           <h2 class="eyebrow">How the PF department reaches you</h2>
           <div class="grid gap-4 sm:grid-cols-2">
             <FormField label="Mobile" mono>
-              <input v-model="form.contactNumber" inputmode="numeric" maxlength="10" class="w-full bg-transparent outline-none" />
+              <input v-model="form.contactNumber" inputmode="tel" maxlength="16" class="w-full bg-transparent outline-none" />
             </FormField>
             <FormField label="Email">
               <input v-model="form.email" type="email" class="w-full bg-transparent outline-none" />
