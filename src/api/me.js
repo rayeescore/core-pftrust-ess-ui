@@ -56,6 +56,10 @@ const LIVE = new Set([
   'createChangeRequest',
   'withdrawChangeRequest',
   'changeRequestAttachment',
+  'transferIns',
+  'transferIn',
+  'createTransferIn',
+  'transferInDocument',
 ])
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -417,4 +421,54 @@ export async function getChangeRequestAttachment(id) {
     return new Blob(['fixture'], { type: 'application/pdf' })
   }
   return (await client.get(`/change-requests/${id}/attachment`, { responseType: 'blob' })).data
+}
+
+/**
+ * The member's transfer-ins, imported ones included, newest first.
+ *
+ * Each arrives with its status already in words and its three steps -- submitted, accepted, credited --
+ * because a transfer-in is not a loan and must not be drawn as one.
+ */
+export async function getTransferIns() {
+  if (!isLive('transferIns')) {
+    await delay(300)
+    return [fixtures.transferIn]
+  }
+  return (await client.get('/transfer-ins')).data.data
+}
+
+/** One transfer-in, by its own id. Somebody else's id is a 403. */
+export async function getTransferIn(id) {
+  if (!isLive('transferIn')) {
+    await delay(300)
+    return fixtures.transferIn
+  }
+  return (await client.get(`/transfer-ins/${id}`)).data.data
+}
+
+/**
+ * Ask for a previous PF account to be brought in.
+ *
+ * JSON, with any proof already uploaded through uploadDocument and referenced by the path it returned.
+ * Nothing here names the member: the API takes them from the login. A second open request for the same
+ * previous account is a 409 whose message names the first -- show it as it comes.
+ */
+export async function createTransferIn(request) {
+  if (!isLive('createTransferIn')) {
+    await delay(700)
+    return fixtures.transferIn
+  }
+  return (await client.post('/transfer-ins', request)).data.data
+}
+
+/**
+ * Annexure K or the dispatch letter, as a blob. A blob rather than a link for the same reason as a ticket
+ * attachment: this API is bearer-only, and a plain link would arrive with no Authorization header.
+ */
+export async function getTransferInDocument(id, kind) {
+  if (!isLive('transferInDocument')) {
+    await delay(300)
+    return new Blob(['fixture'], { type: 'application/pdf' })
+  }
+  return (await client.get(`/transfer-ins/${id}/documents/${kind}`, { responseType: 'blob' })).data
 }

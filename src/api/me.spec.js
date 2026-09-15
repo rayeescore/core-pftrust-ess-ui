@@ -291,3 +291,42 @@ describe('change requests', () => {
     expect(result).toBe(blob)
   })
 })
+
+describe('transfer-ins', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it("lists the caller's own and unwraps the envelope", async () => {
+    client.get.mockResolvedValue({ data: { data: [{ id: 't1', reference: '2026000123' }] } })
+
+    const list = await me.getTransferIns()
+
+    expect(client.get).toHaveBeenCalledWith('/transfer-ins')
+    expect(list).toEqual([{ id: 't1', reference: '2026000123' }])
+  })
+
+  it('reads one by id', async () => {
+    client.get.mockResolvedValue({ data: { data: { id: 't1' } } })
+
+    expect(await me.getTransferIn('t1')).toEqual({ id: 't1' })
+    expect(client.get).toHaveBeenCalledWith('/transfer-ins/t1')
+  })
+
+  it('posts the request as JSON and names nobody in it', async () => {
+    client.post.mockResolvedValue({ data: { data: { id: 't1' } } })
+    const request = { employerName: 'Bharat Forge Ltd', previousPfNumber: 'MH/BAN/1', heldBy: 'TRUST' }
+
+    const created = await me.createTransferIn(request)
+
+    expect(client.post).toHaveBeenCalledWith('/transfer-ins', request)
+    expect(JSON.stringify(client.post.mock.calls[0])).not.toMatch(/employeeId|pernNumber|"pfNumber"/)
+    expect(created.id).toBe('t1')
+  })
+
+  it('fetches a document as a blob rather than linking to it', async () => {
+    const blob = new Blob(['%PDF'])
+    client.get.mockResolvedValue({ data: blob })
+
+    expect(await me.getTransferInDocument('t1', 'annexure-k')).toBe(blob)
+    expect(client.get).toHaveBeenCalledWith('/transfer-ins/t1/documents/annexure-k', { responseType: 'blob' })
+  })
+})
