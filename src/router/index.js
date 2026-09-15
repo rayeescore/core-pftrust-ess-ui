@@ -15,6 +15,7 @@ const router = createRouter({
     { path: '/', name: 'dashboard', component: DashboardView },
 
     { path: '/pf', name: 'passbook', component: () => import('@/views/PassbookView.vue') },
+    { path: '/pf/statements', name: 'statements', component: () => import('@/views/StatementsView.vue') },
 
     { path: '/loans', name: 'loan-list', component: () => import('@/views/loan/LoanListView.vue') },
 

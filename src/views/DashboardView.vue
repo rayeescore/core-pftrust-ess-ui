@@ -23,6 +23,7 @@ const balance = ref(null)
 const balanceFailed = ref(false)
 const applications = ref(null)
 const alerts = ref([])
+const statements = ref(null)
 
 onMounted(() => {
   me.getIdentity().then((data) => (identity.value = data))
@@ -40,6 +41,10 @@ onMounted(() => {
   me.getAlerts()
     .then((data) => (alerts.value = data))
     .catch(() => (alerts.value = []))
+
+  me.getStatements()
+    .then((data) => (statements.value = data))
+    .catch(() => (statements.value = null))
 })
 
 const greeting = () => {
@@ -312,19 +317,20 @@ const quickActions = [
         </div>
 
         <div
+          v-if="statements?.annual?.length"
           class="flex flex-col gap-[9px] rounded-card border border-border bg-surface-deep px-[22px] py-5"
         >
           <p class="eyebrow">Statements</p>
           <p class="text-[13.5px] leading-[1.55] text-ink-soft">
             Your annual statement for
-            <span class="font-semibold text-ink">{{ financialYear(2026) }}</span> is published and
+            <span class="font-semibold text-ink">{{ financialYear(statements.annual[0].year) }}</span> is published and
             ready.
           </p>
           <RouterLink
             to="/pf/statements"
             class="pt-0.5 text-[13px] font-semibold text-brand-700 hover:text-brand-600"
           >
-            Download PDF →
+            Go to statements →
           </RouterLink>
         </div>
       </div>

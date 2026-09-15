@@ -2,6 +2,8 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import * as me from '@/api/me'
+import { useDownload } from '@/composables/useDownload'
+import AppButton from '@/components/ui/AppButton.vue'
 import { displayDate, money } from '@/composables/useFormat'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusChip from '@/components/ui/StatusChip.vue'
@@ -21,6 +23,7 @@ import VerticalTracker from '@/components/product/VerticalTracker.vue'
  */
 const route = useRoute()
 const loan = ref(null)
+const { busy, failure, download } = useDownload()
 
 onMounted(async () => {
   loan.value = await me.getLoan(route.params.id)
@@ -97,6 +100,22 @@ onMounted(async () => {
       </div>
 
       <aside class="flex flex-col gap-5">
+        <section v-if="loan.receipt" class="rounded-card border border-border bg-surface px-5 py-5">
+          <h2 class="eyebrow mb-2">Receipt</h2>
+          <p class="text-[13px] leading-[1.55] text-ink-soft">The trust's receipt for this advance.</p>
+          <AppButton
+            class="mt-3"
+            variant="secondary"
+            size="sm"
+            :loading="busy === 'receipt'"
+            @click="download('receipt', () => me.getLoanReceipt(loan.id))"
+          >
+            <AppIcon name="download" :size="15" />
+            Download receipt
+          </AppButton>
+          <p v-if="failure" class="mt-2 text-[12.5px] text-danger-700">{{ failure }}</p>
+        </section>
+
         <section class="rounded-card border border-border bg-surface px-5 py-5">
           <h2 class="eyebrow mb-3">History</h2>
           <ol class="flex flex-col gap-3">
