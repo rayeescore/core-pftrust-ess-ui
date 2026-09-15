@@ -1,36 +1,48 @@
 <script setup>
-import { RouterLink } from 'vue-router'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import * as me from '@/api/me'
+import { displayDate } from '@/composables/useFormat'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import FormField from '@/components/ui/FormField.vue'
+import StatusChip from '@/components/ui/StatusChip.vue'
 
 /**
  * Bringing a previous employer's provident fund into this trust.
  *
  * The screen asks **only what a member can answer.** Reference number, Annexure K, posting date and the
- * amounts all arrive from the other trust months later, and they are drawn as a visibly separate zone
- * the member never fills. Mixing them into the form would ask somebody for figures that do not exist
- * yet and make the wait look like their fault.
+ * amounts all arrive from the other fund months later, and they are drawn as a visibly separate zone
+ * the member never fills. The other fund's address and the EPS number are optional: a member often
+ * knows neither, and the PF department finds them before the letter goes.
  *
  * The honest part is the timeline: three to six months, and out of the trust's hands. Members do not
  * know this and it is the single commonest thing they chase.
  */
-const employer = [
-  { label: 'Employer', value: 'Bharat Forge Ltd' },
-  { label: 'Their PF account was with', value: 'Their own trust' },
-  { label: 'Your PF number there', value: '883421', mono: true },
-  { label: 'Your EPS number there', value: 'MH/44218/0009341', mono: true },
-  { label: 'You joined them', value: '12 August 2004' },
-  { label: 'You left them', value: '30 June 2007' },
-]
+const router = useRouter()
 
-const address = [
-  { label: 'Address line 1', value: 'Mundhwa Industrial Area' },
-  { label: 'Address line 2', value: 'Pune Cantonment' },
-  { label: 'Address line 3', value: 'Pune' },
-  { label: 'Address line 4', value: 'Maharashtra' },
-  { label: 'Pincode', value: '411036', mono: true },
-  { label: 'State', value: 'Maharashtra' },
-]
+const transferIns = ref(null)
+const form = reactive({
+  employerName: '',
+  joinedOn: '',
+  leftOn: '',
+  previousPfNumber: '',
+  previousEpsNumber: '',
+  heldBy: '',
+  fundAddress: { line1: '', line2: '', line3: '', line4: '', pincode: '' },
+  contactNumber: '',
+  email: '',
+})
+const proof = ref(null)
+// The name the member chose. The upload answers with a generated one, which means nothing to them.
+const proofName = ref('')
+const uploading = ref(false)
+const sending = ref(false)
+const error = ref('')
+const fileInput = ref(null)
+
+// Local, not toISOString: in India the UTC date is yesterday until half past five in the morning.
+const now = new Date()
+const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
 const laterByDepartment = [
   { label: 'Reference number', when: 'On dispatch' },
@@ -40,10 +52,85 @@ const laterByDepartment = [
 
 const timeline = [
   { t: 'You send this', b: 'Today. Nothing else is needed from you after it.' },
-  { t: 'The trust writes to them', b: 'Within a week or two, with a request letter and your details.' },
+  { t: 'The trust writes to them', b: 'Once the PF department has checked your details, with a request letter.' },
   { t: 'They reply with Annexure K', b: 'This is the wait. Three to six months is normal and it is out of the trust’s hands.' },
   { t: 'Your account is credited', b: 'The amounts appear in your passbook as a transfer-in event.' },
 ]
+
+onMounted(async () => {
+  const [list, profile] = await Promise.all([
+    me.getTransferIns().catch(() => []),
+    me.getProfile().catch(() => null),
+  ])
+  transferIns.value = list
+  if (profile) {
+    form.contactNumber = profile.mobile ?? ''
+    form.email = profile.email ?? ''
+  }
+})
+
+const canSend = computed(
+  () =>
+    form.employerName.trim() &&
+    form.joinedOn &&
+    form.leftOn &&
+    form.previousPfNumber.trim() &&
+    form.heldBy &&
+    form.contactNumber.trim() &&
+    form.email.trim() &&
+    !uploading.value &&
+    !sending.value,
+)
+
+async function attach(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  error.value = ''
+  uploading.value = true
+  try {
+    proof.value = await me.uploadDocument(file)
+    proofName.value = file.name
+  } catch (failure) {
+    error.value = failure.response?.data?.message ?? 'That file could not be attached. Try again.'
+  } finally {
+    uploading.value = false
+    event.target.value = ''
+  }
+}
+
+function orNull(value) {
+  const trimmed = (value ?? '').trim()
+  return trimmed === '' ? null : trimmed
+}
+
+function body() {
+  const address = Object.fromEntries(Object.entries(form.fundAddress).map(([key, value]) => [key, orNull(value)]))
+  return {
+    employerName: form.employerName.trim(),
+    joinedOn: form.joinedOn,
+    leftOn: form.leftOn,
+    previousPfNumber: form.previousPfNumber.trim(),
+    previousEpsNumber: orNull(form.previousEpsNumber),
+    heldBy: form.heldBy,
+    fundAddress: Object.values(address).some((value) => value !== null) ? address : null,
+    contactNumber: form.contactNumber.trim(),
+    email: form.email.trim(),
+    proof: proof.value,
+  }
+}
+
+async function send() {
+  error.value = ''
+  sending.value = true
+  try {
+    const created = await me.createTransferIn(body())
+    router.push(`/transfer-in/${created.id}`)
+  } catch (failure) {
+    error.value = failure.response?.data?.message ?? 'That did not go through. Try again in a moment.'
+  } finally {
+    sending.value = false
+  }
+}
 </script>
 
 <template>
@@ -58,11 +145,51 @@ const timeline = [
 
     <div class="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
       <div class="flex flex-col gap-5">
+        <section
+          v-if="transferIns?.length"
+          class="flex flex-col gap-3 rounded-card border border-border bg-surface px-6 py-[22px]"
+        >
+          <h2 class="eyebrow">Your requests</h2>
+          <RouterLink
+            v-for="item in transferIns"
+            :key="item.id"
+            :to="`/transfer-in/${item.id}`"
+            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3.5 hover:bg-surface-sub"
+          >
+            <div>
+              <p class="text-[13.5px] font-medium">{{ item.employer ?? 'Previous employer' }}</p>
+              <p class="text-[11.5px] text-ink-faint">
+                <span class="font-mono">{{ item.reference }}</span> · {{ displayDate(item.appliedOn) }}
+              </p>
+            </div>
+            <StatusChip :label="item.status.label" :tone="item.status.tone" />
+          </RouterLink>
+        </section>
+
         <section class="flex flex-col gap-4 rounded-card border border-border bg-surface px-6 py-[22px]">
-          <h2 class="eyebrow">The employer who holds it</h2>
+          <h2 class="eyebrow">{{ transferIns?.length ? 'Bring another account here' : 'The employer who holds it' }}</h2>
           <div class="grid gap-4 sm:grid-cols-2">
-            <FormField v-for="f in employer" :key="f.label" :label="f.label" :mono="f.mono">
-              <input :value="f.value" class="w-full bg-transparent outline-none" />
+            <FormField label="Employer">
+              <input v-model="form.employerName" maxlength="100" class="w-full bg-transparent outline-none" />
+            </FormField>
+            <FormField label="Their PF account was with">
+              <select v-model="form.heldBy" class="w-full bg-transparent outline-none">
+                <option value="" disabled>Choose one</option>
+                <option value="TRUST">The employer’s own trust</option>
+                <option value="RPFC">The regional PF office</option>
+              </select>
+            </FormField>
+            <FormField label="Your PF number there" mono>
+              <input v-model="form.previousPfNumber" maxlength="50" class="w-full bg-transparent outline-none" />
+            </FormField>
+            <FormField label="Your EPS number there" hint="Optional" mono>
+              <input v-model="form.previousEpsNumber" maxlength="50" class="w-full bg-transparent outline-none" />
+            </FormField>
+            <FormField label="You joined them">
+              <input v-model="form.joinedOn" type="date" :max="today" class="w-full bg-transparent outline-none" />
+            </FormField>
+            <FormField label="You left them">
+              <input v-model="form.leftOn" type="date" :max="today" class="w-full bg-transparent outline-none" />
             </FormField>
           </div>
           <p class="text-[12.5px] leading-[1.55] text-ink-faint">
@@ -74,25 +201,49 @@ const timeline = [
 
         <section class="flex flex-col gap-4 rounded-card border border-border bg-surface px-6 py-[22px]">
           <h2 class="eyebrow">Where to write to them</h2>
+          <p class="text-[12.5px] leading-[1.55] text-ink-faint">
+            Optional. If you do not know their fund’s address, leave it — the PF department will find it.
+          </p>
           <div class="grid gap-4 sm:grid-cols-2">
-            <FormField v-for="f in address" :key="f.label" :label="f.label" :mono="f.mono">
-              <input :value="f.value" class="w-full bg-transparent outline-none" />
+            <FormField v-for="n in 4" :key="n" :label="`Address line ${n}`">
+              <input v-model="form.fundAddress[`line${n}`]" maxlength="100" class="w-full bg-transparent outline-none" />
+            </FormField>
+            <FormField label="Pincode" mono>
+              <input v-model="form.fundAddress.pincode" inputmode="numeric" maxlength="6" class="w-full bg-transparent outline-none" />
             </FormField>
           </div>
+        </section>
+
+        <section class="flex flex-col gap-4 rounded-card border border-border bg-surface px-6 py-[22px]">
+          <h2 class="eyebrow">How the PF department reaches you</h2>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <FormField label="Mobile" mono>
+              <input v-model="form.contactNumber" inputmode="numeric" maxlength="10" class="w-full bg-transparent outline-none" />
+            </FormField>
+            <FormField label="Email">
+              <input v-model="form.email" type="email" class="w-full bg-transparent outline-none" />
+            </FormField>
+          </div>
+          <p class="text-[12.5px] leading-[1.55] text-ink-faint">
+            Used for this request only. To change what is on your record, ask from your profile.
+          </p>
         </section>
 
         <section class="flex flex-col gap-3 rounded-card border border-border bg-surface px-6 py-[22px]">
           <h2 class="eyebrow">Anything you already have</h2>
           <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3.5">
             <div>
-              <p class="text-[13.5px] font-medium">Old PF slip, payslip or Form 13</p>
+              <p class="text-[13.5px] font-medium">{{ proof ? proofName : 'Old PF slip, payslip or Form 13' }}</p>
               <p class="text-[11.5px] text-ink-faint">Optional — it speeds up tracing the account</p>
             </div>
+            <input ref="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="attach" />
             <button
-              class="flex min-h-9 items-center gap-2 rounded-lg border border-border-strong px-3.5 text-[12.5px] font-semibold transition-colors hover:bg-surface-sub"
+              class="flex min-h-9 items-center gap-2 rounded-lg border border-border-strong px-3.5 text-[12.5px] font-semibold transition-colors hover:bg-surface-sub disabled:opacity-60"
+              :disabled="uploading"
+              @click="fileInput.click()"
             >
               <AppIcon name="upload" :size="14" />
-              Upload
+              {{ uploading ? 'Uploading…' : proof ? 'Replace' : 'Upload' }}
             </button>
           </div>
         </section>
@@ -116,13 +267,16 @@ const timeline = [
         </section>
 
         <div class="flex flex-wrap items-center justify-between gap-4">
-          <p class="max-w-[52ch] text-[12.5px] leading-[1.55] text-ink-faint">
+          <p v-if="error" class="max-w-[52ch] text-[12.5px] leading-[1.55] text-danger-700" role="alert">{{ error }}</p>
+          <p v-else class="max-w-[52ch] text-[12.5px] leading-[1.55] text-ink-faint">
             You can raise a transfer-in for each previous employer that still holds a balance.
           </p>
           <button
-            class="min-h-11 rounded-[10px] bg-brand-500 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-brand-600"
+            class="min-h-11 rounded-[10px] bg-brand-500 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="!canSend"
+            @click="send"
           >
-            Send the request
+            {{ sending ? 'Sending…' : 'Send the request' }}
           </button>
         </div>
       </div>

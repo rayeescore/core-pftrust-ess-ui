@@ -30,6 +30,7 @@ const router = createRouter({
     { path: '/profile', name: 'profile', component: () => import('@/views/ProfileView.vue') },
     { path: '/profile/corrections', name: 'change-request', component: () => import('@/views/ChangeRequestView.vue') },
     { path: '/transfer-in', name: 'transfer-in', component: () => import('@/views/TransferInView.vue') },
+    { path: '/transfer-in/:id', name: 'transfer-in-detail', component: () => import('@/views/TransferInDetailView.vue') },
     { path: '/claims', name: 'claims', component: () => import('@/views/ClaimView.vue') },
     { path: '/help', name: 'help', component: () => import('@/views/HelpView.vue') },
     { path: '/trust', name: 'trust', component: () => import('@/views/TrustView.vue') },
