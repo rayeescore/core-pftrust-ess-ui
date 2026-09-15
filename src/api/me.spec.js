@@ -330,3 +330,37 @@ describe('transfer-ins', () => {
     expect(client.get).toHaveBeenCalledWith('/transfer-ins/t1/documents/annexure-k', { responseType: 'blob' })
   })
 })
+
+describe('claims', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('lists the raisable types', async () => {
+    client.get.mockResolvedValue({ data: { data: [{ code: '04', kind: 'PAYOUT' }] } })
+    expect(await me.getClaimTypes()).toEqual([{ code: '04', kind: 'PAYOUT' }])
+    expect(client.get).toHaveBeenCalledWith('/settlements/types')
+  })
+
+  it("lists and reads the caller's own claims", async () => {
+    client.get.mockResolvedValue({ data: { data: [] } })
+    await me.getClaims()
+    expect(client.get).toHaveBeenCalledWith('/settlements')
+    client.get.mockResolvedValue({ data: { data: { id: 's1' } } })
+    expect(await me.getClaim('s1')).toEqual({ id: 's1' })
+    expect(client.get).toHaveBeenCalledWith('/settlements/s1')
+  })
+
+  it('posts a claim with no person and no bank account in it', async () => {
+    client.post.mockResolvedValue({ data: { data: { id: 's1' } } })
+    const request = { typeCode: '04', lastWorkingDay: '2026-08-31', address: { line1: 'Flat 302' } }
+    expect((await me.createClaim(request)).id).toBe('s1')
+    expect(client.post).toHaveBeenCalledWith('/settlements', request)
+    expect(JSON.stringify(client.post.mock.calls[0])).not.toMatch(/employeeId|pernNumber|"pfNumber"|accountNumber|ifsc/i)
+  })
+
+  it('fetches an attached document as a blob', async () => {
+    const blob = new Blob(['%PDF'])
+    client.get.mockResolvedValue({ data: blob })
+    expect(await me.getDocumentFile('d1')).toBe(blob)
+    expect(client.get).toHaveBeenCalledWith('/documents/d1', { responseType: 'blob' })
+  })
+})
