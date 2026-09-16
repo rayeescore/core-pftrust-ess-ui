@@ -90,10 +90,11 @@ view needs (`busy`, `failure`, `download`) and writes the blob out through a tem
 lapsed and a popup blocker — Safari's on a phone especially — may refuse the tab. It also reads the API's
 sentence out of a 404, which on a blob request arrives as a `Blob` rather than JSON.
 
-**Four older screens still open a blob in a new tab**, and should move onto `useDownload`:
-`TransferInDetailView`, `ClaimDetailView`, `ProfileView` and `HelpView`. They also read
-`failure.response?.data?.message` from what is a `Blob` on a blob request, so they never show the API's
-sentence. Left alone in phase 8 because the popup behaviour has not been confirmed on a device.
+**Every attachment saves through `useDownload` too.** `TransferInDetailView`, `ClaimDetailView`,
+`ProfileView` and `HelpView` used to `window.open` a blob after an `await`, and read
+`failure.response?.data?.message` off what is a `Blob` on a blob request, so the API's sentence never
+reached the member. Moved 2026-09-16. The four attachment reads in `api/me.js` return
+`{ blob, filename }` like the statement calls, so no view composes a filename of its own.
 
 One screen still depends on backend data that is missing, and says so where a member would otherwise be
 misled:

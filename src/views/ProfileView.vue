@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import * as me from '@/api/me'
+import { downloadFailure, saveFile } from '@/composables/useDownload'
 import AppBanner from '@/components/ui/AppBanner.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusChip from '@/components/ui/StatusChip.vue'
@@ -49,21 +50,19 @@ function correct() {
 }
 
 /**
- * The proof the member attached, so they can check they sent the right page.
+ * Saves the proof the member attached, so they can check they sent the right page.
  *
- * Fetched through the authenticated client and handed to the browser as an object URL, never as a
- * plain link -- the API is bearer-only, so an <a href> would land on a 401 in a blank tab.
+ * Fetched through the authenticated client, never a plain <a href> -- the API is bearer-only, so a
+ * link would land on a 401 in a blank tab. Saved rather than opened in a new tab: by the time the
+ * request returns, the click's user activation has usually lapsed and a popup blocker may refuse it.
  */
-async function openProof(request) {
+async function saveProof(request) {
   requestError.value = ''
   try {
-    const blob = await me.getChangeRequestAttachment(request.id)
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank', 'noopener')
-    setTimeout(() => URL.revokeObjectURL(url), 60000)
-  } catch (failure) {
-    requestError.value =
-      failure.response?.data?.message ?? 'Could not open that attachment. Try again in a moment.'
+    const { blob, filename } = await me.getChangeRequestAttachment(request.id)
+    saveFile(blob, filename)
+  } catch (error) {
+    requestError.value = await downloadFailure(error)
   }
 }
 
@@ -114,7 +113,7 @@ async function withdraw(request) {
             v-if="request.hasAttachment"
             type="button"
             class="min-h-11 text-[12.5px] font-medium text-brand-600 hover:text-brand-700"
-            @click="openProof(request)"
+            @click="saveProof(request)"
           >
             View the proof you sent
           </button>
