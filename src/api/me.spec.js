@@ -222,16 +222,22 @@ describe('closeTicket', () => {
 describe('getTicketAttachment', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('fetches the attachment as a blob through the authenticated client', async () => {
+  it('fetches the attachment as a blob, with the name to save it under', async () => {
     const blob = new Blob(['pdf bytes'], { type: 'application/pdf' })
-    client.get.mockResolvedValue({ data: blob })
+    client.get.mockResolvedValue({ data: blob, headers: { 'x-suggested-filename': 'cheque.jpg' } })
 
     const result = await me.getTicketAttachment('c1')
 
     expect(client.get).toHaveBeenCalledWith('/tickets/comments/c1/attachment', {
       responseType: 'blob',
     })
-    expect(result).toBe(blob)
+    expect(result).toEqual({ blob, filename: 'cheque.jpg' })
+  })
+
+  it('falls back to a name of its own when the API sends no filename header', async () => {
+    client.get.mockResolvedValue({ data: new Blob(['x']), headers: {} })
+
+    expect((await me.getTicketAttachment('c1')).filename).toBe('attachment.pdf')
   })
 })
 
@@ -281,14 +287,14 @@ describe('change requests', () => {
 
   it('fetches proof as a blob rather than linking to it', async () => {
     const blob = new Blob(['x'], { type: 'application/pdf' })
-    client.get.mockResolvedValue({ data: blob })
+    client.get.mockResolvedValue({ data: blob, headers: {} })
 
     const result = await me.getChangeRequestAttachment('cr-1')
 
     expect(client.get).toHaveBeenCalledWith('/change-requests/cr-1/attachment', {
       responseType: 'blob',
     })
-    expect(result).toBe(blob)
+    expect(result).toEqual({ blob, filename: 'proof.pdf' })
   })
 })
 
@@ -324,9 +330,12 @@ describe('transfer-ins', () => {
 
   it('fetches a document as a blob rather than linking to it', async () => {
     const blob = new Blob(['%PDF'])
-    client.get.mockResolvedValue({ data: blob })
+    client.get.mockResolvedValue({ data: blob, headers: {} })
 
-    expect(await me.getTransferInDocument('t1', 'annexure-k')).toBe(blob)
+    expect(await me.getTransferInDocument('t1', 'annexure-k')).toEqual({
+      blob,
+      filename: 'annexure-k.pdf',
+    })
     expect(client.get).toHaveBeenCalledWith('/transfer-ins/t1/documents/annexure-k', { responseType: 'blob' })
   })
 })
@@ -359,8 +368,8 @@ describe('claims', () => {
 
   it('fetches an attached document as a blob', async () => {
     const blob = new Blob(['%PDF'])
-    client.get.mockResolvedValue({ data: blob })
-    expect(await me.getDocumentFile('d1')).toBe(blob)
+    client.get.mockResolvedValue({ data: blob, headers: {} })
+    expect(await me.getDocumentFile('d1')).toEqual({ blob, filename: 'document.pdf' })
     expect(client.get).toHaveBeenCalledWith('/documents/d1', { responseType: 'blob' })
   })
 })

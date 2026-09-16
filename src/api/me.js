@@ -82,6 +82,18 @@ function isLive(name) {
 }
 
 /**
+ * A generated PDF: the file and the name the API gave it. X-Suggested-Filename is exposed by the API's
+ * CORS configuration; the fallback covers fixture mode and a proxy that strips the header.
+ */
+function asDownload(response, fallback) {
+  return { blob: response.data, filename: response.headers?.['x-suggested-filename'] ?? fallback }
+}
+
+function fixtureDownload(filename) {
+  return { blob: new Blob(['fixture'], { type: 'application/pdf' }), filename }
+}
+
+/**
  * The identity strip, and the portal's first call. Built and live: GET /api/v1/me.
  *
  * It doubles as the check on the member's own account -- a caller whose login is not linked to a PF
@@ -305,10 +317,12 @@ export async function closeTicket(id) {
 export async function getTicketAttachment(attachmentId) {
   if (!isLive('ticketAttachment')) {
     await delay(300)
-    return new Blob(['fixture'], { type: 'application/pdf' })
+    return fixtureDownload('attachment.pdf')
   }
-  return (await client.get(`/tickets/comments/${attachmentId}/attachment`, { responseType: 'blob' }))
-    .data
+  return asDownload(
+    await client.get(`/tickets/comments/${attachmentId}/attachment`, { responseType: 'blob' }),
+    'attachment.pdf',
+  )
 }
 
 /**
@@ -428,9 +442,9 @@ export async function withdrawChangeRequest(id) {
 export async function getChangeRequestAttachment(id) {
   if (!isLive('changeRequestAttachment')) {
     await delay(300)
-    return new Blob(['fixture'], { type: 'application/pdf' })
+    return fixtureDownload('proof.pdf')
   }
-  return (await client.get(`/change-requests/${id}/attachment`, { responseType: 'blob' })).data
+  return asDownload(await client.get(`/change-requests/${id}/attachment`, { responseType: 'blob' }), 'proof.pdf')
 }
 
 /**
@@ -478,9 +492,12 @@ export async function createTransferIn(request) {
 export async function getTransferInDocument(id, kind) {
   if (!isLive('transferInDocument')) {
     await delay(300)
-    return new Blob(['fixture'], { type: 'application/pdf' })
+    return fixtureDownload(`${kind}.pdf`)
   }
-  return (await client.get(`/transfer-ins/${id}/documents/${kind}`, { responseType: 'blob' })).data
+  return asDownload(
+    await client.get(`/transfer-ins/${id}/documents/${kind}`, { responseType: 'blob' }),
+    `${kind}.pdf`,
+  )
 }
 
 /** The kinds of claim a member can raise, each with the documents the trust asks for. */
@@ -528,21 +545,9 @@ export async function createClaim(request) {
 export async function getDocumentFile(id) {
   if (!isLive('documentFile')) {
     await delay(300)
-    return new Blob(['fixture'], { type: 'application/pdf' })
+    return fixtureDownload('document.pdf')
   }
-  return (await client.get(`/documents/${id}`, { responseType: 'blob' })).data
-}
-
-/**
- * A generated PDF: the file and the name the API gave it. X-Suggested-Filename is exposed by the API's
- * CORS configuration; the fallback covers fixture mode and a proxy that strips the header.
- */
-function asDownload(response, fallback) {
-  return { blob: response.data, filename: response.headers?.['x-suggested-filename'] ?? fallback }
-}
-
-function fixtureDownload(filename) {
-  return { blob: new Blob(['fixture'], { type: 'application/pdf' }), filename }
+  return asDownload(await client.get(`/documents/${id}`, { responseType: 'blob' }), 'document.pdf')
 }
 
 /** What the member can download: published annual statements, contributed years, the loan history. */

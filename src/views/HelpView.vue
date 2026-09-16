@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import * as me from '@/api/me'
+import { downloadFailure, saveFile } from '@/composables/useDownload'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusChip from '@/components/ui/StatusChip.vue'
 
@@ -142,22 +143,18 @@ async function settle() {
 }
 
 /**
- * Opens an attachment in a new tab.
+ * Saves an attachment on the conversation.
  *
- * Not a plain <a href> -- this API is bearer-only with no cookie session, and a top-level navigation
- * carries no Authorization header, so a plain link would land on a 401 and a blank tab. The file is
- * fetched through the same authenticated client as everything else and handed to the browser as an
- * object URL, revoked once the new tab has had it.
+ * Fetched through the authenticated client, never a plain <a href> -- the API is bearer-only, so a
+ * link would land on a 401 in a blank tab. Saved rather than opened in a new tab: by the time the
+ * request returns, the click's user activation has usually lapsed and a popup blocker may refuse it.
  */
-async function openAttachment(message) {
+async function saveAttachment(message) {
   try {
-    const blob = await me.getTicketAttachment(message.attachmentId)
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank', 'noopener')
-    setTimeout(() => URL.revokeObjectURL(url), 60000)
-  } catch (failure) {
-    replyError.value =
-      failure.response?.data?.message ?? 'Could not open that attachment. Try again in a moment.'
+    const { blob, filename } = await me.getTicketAttachment(message.attachmentId)
+    saveFile(blob, filename)
+  } catch (error) {
+    replyError.value = await downloadFailure(error)
   }
 }
 </script>
@@ -310,7 +307,7 @@ async function openAttachment(message) {
                 v-if="message.attachmentId"
                 type="button"
                 class="mt-2 flex min-h-11 items-center gap-2 font-mono text-[11.5px] text-ink-muted underline-offset-4 hover:underline"
-                @click="openAttachment(message)"
+                @click="saveAttachment(message)"
               >
                 <AppIcon name="file" :size="13" />
                 {{ message.attachment }}

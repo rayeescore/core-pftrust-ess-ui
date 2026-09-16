@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import * as me from '@/api/me'
+import { downloadFailure, saveFile } from '@/composables/useDownload'
 import { displayDate, money } from '@/composables/useFormat'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusChip from '@/components/ui/StatusChip.vue'
@@ -23,15 +24,20 @@ onMounted(async () => {
   }
 })
 
-async function open(documentId) {
+/**
+ * Saves a document the member sent with their claim.
+ *
+ * Fetched through the authenticated client, never a plain <a href> -- the API is bearer-only, so a
+ * link would land on a 401 in a blank tab. Saved rather than opened in a new tab: by the time the
+ * request returns, the click's user activation has usually lapsed and a popup blocker may refuse it.
+ */
+async function save(documentId) {
   failed.value = ''
   try {
-    const blob = await me.getDocumentFile(documentId)
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank', 'noopener')
-    setTimeout(() => URL.revokeObjectURL(url), 60000)
-  } catch (failure) {
-    failed.value = failure.response?.data?.message ?? 'Could not open that document. Try again in a moment.'
+    const { blob, filename } = await me.getDocumentFile(documentId)
+    saveFile(blob, filename)
+  } catch (error) {
+    failed.value = await downloadFailure(error)
   }
 }
 </script>
@@ -100,7 +106,7 @@ async function open(documentId) {
             :key="doc.id"
             type="button"
             class="mt-2 block text-left text-[13px] font-medium text-brand-700 hover:text-brand-600"
-            @click="open(doc.id)"
+            @click="save(doc.id)"
           >
             {{ doc.name }}
           </button>

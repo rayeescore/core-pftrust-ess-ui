@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import * as me from '@/api/me'
+import { downloadFailure, saveFile } from '@/composables/useDownload'
 import { displayDate, money } from '@/composables/useFormat'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusChip from '@/components/ui/StatusChip.vue'
@@ -27,17 +28,16 @@ onMounted(async () => {
 })
 
 /**
- * Opens a document in a new tab. Fetched through the authenticated client and handed over as an object
- * URL: a plain link would carry no Authorization header and land on a 401.
+ * Saves a document. Fetched through the authenticated client, because a plain link would carry no
+ * Authorization header and land on a 401 -- and saved rather than opened in a tab, because by the time
+ * the request returns the click's user activation has lapsed and a popup blocker may refuse the tab.
  */
-async function open(kind) {
+async function save(kind) {
   try {
-    const blob = await me.getTransferInDocument(route.params.id, kind)
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank', 'noopener')
-    setTimeout(() => URL.revokeObjectURL(url), 60000)
-  } catch (failure) {
-    failed.value = failure.response?.data?.message ?? 'Could not open that document. Try again in a moment.'
+    const { blob, filename } = await me.getTransferInDocument(route.params.id, kind)
+    saveFile(blob, filename)
+  } catch (error) {
+    failed.value = await downloadFailure(error)
   }
 }
 </script>
@@ -117,14 +117,14 @@ async function open(kind) {
           <button
             v-if="transferIn.documents.annexureK"
             class="block text-[13px] font-medium text-brand-700 hover:text-brand-600"
-            @click="open('annexure-k')"
+            @click="save('annexure-k')"
           >
             Annexure K
           </button>
           <button
             v-if="transferIn.documents.dispatchLetter"
             class="mt-2 block text-[13px] font-medium text-brand-700 hover:text-brand-600"
-            @click="open('dispatch-letter')"
+            @click="save('dispatch-letter')"
           >
             Dispatch letter
           </button>
