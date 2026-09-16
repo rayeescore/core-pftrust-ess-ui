@@ -106,7 +106,7 @@ onMounted(async () => {
           <AppButton
             class="mt-3"
             variant="secondary"
-            size="sm"
+            size="md"
             :loading="busy === 'receipt'"
             @click="download('receipt', () => me.getLoanReceipt(loan.id))"
           >

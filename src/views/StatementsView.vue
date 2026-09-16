@@ -77,7 +77,7 @@ const empty = computed(
             </div>
             <AppButton
               variant="secondary"
-              size="sm"
+              size="md"
               :loading="busy === `annual-${entry.year}`"
               :disabled="busy !== null"
               @click="download(`annual-${entry.year}`, () => me.getAnnualStatement(entry.year))"
@@ -107,7 +107,7 @@ const empty = computed(
             </p>
             <AppButton
               variant="secondary"
-              size="sm"
+              size="md"
               :loading="busy === `monthly-${entry.year}`"
               :disabled="busy !== null"
               @click="download(`monthly-${entry.year}`, () => me.getMonthlyStatement(entry.year))"
@@ -127,7 +127,7 @@ const empty = computed(
           </div>
           <AppButton
             variant="secondary"
-            size="sm"
+            size="md"
             :loading="busy === 'loan-history'"
             :disabled="busy !== null"
             @click="download('loan-history', () => me.getLoanHistory())"
