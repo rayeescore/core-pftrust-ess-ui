@@ -22,8 +22,13 @@ hostname is dropped and this portal calls the admin API.
 
 So ESS ships as a **UI deployment only** (6064), and this app is a cross-origin caller of that API. Two
 things must agree or the portal breaks in a way no screen explains: the CSP `connect-src` in
-`nginx/nginx.conf` and the build-time `VITE_API_BASE_URL`, both naming `corepftapi.mahindra.com`. The
-API side already names `corepftess.mahindra.com` in its CORS list and its 401 entry point.
+`nginx/nginx.conf` and `VITE_API_BASE_URL` in `.env.mahindra`, both naming `corepftapi.mahindra.com`.
+The API side already names `corepftess.mahindra.com` in its CORS list and its 401 entry point.
+
+**`.env.mahindra` is committed**, as `core-pftrust-ui`'s is. Vite inlines every `VITE_` value into the
+bundle, so none of them can be a secret and all of them are already readable by anyone who opens the
+portal — while leaving the file out meant the production build depended on something nobody could see.
+`.gitignore` still hides every other `.env.*`.
 
 ## Build & run
 

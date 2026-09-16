@@ -2,7 +2,10 @@ node_modules
 dist
 .env
 .env.*
+# Deployment configuration, not secrets: every VITE_ value is inlined into the bundle and readable by
+# any visitor, so the build's inputs are committed rather than left to whoever runs the build.
 !.env.example
+!.env.mahindra
 *.local
 .DS_Store
 .idea
