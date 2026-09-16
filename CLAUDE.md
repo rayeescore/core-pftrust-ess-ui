@@ -11,12 +11,19 @@ Its audience is every PF member (~16,700 employees), not the trust staff the adm
 |---|---|---|
 | Repo | `core-pftrust-ui` | `core-pftrust-ess-ui` |
 | Host | `corepft.mahindra.com` | `corepftess.mahindra.com` (UI 6064) |
-| API | `corepftapi.mahindra.com` (5055) | `corepftessapi.mahindra.com` (**6065**) |
+| API | `corepftapi.mahindra.com` (5055) | **the same**, `corepftapi.mahindra.com` (5055) |
 | Stack | Vue 3 + **Vuetify 3** | Vue 3 + **Tailwind CSS 4, no component library** |
 
-**The backend is not a new codebase.** `core-pftrust-service` is deployed a second time on port 6065
-against the same tenant database — one set of business rules, one migration history, one Keycloak. The
-member surface is isolated at the controller only, under `/api/v1/me`.
+**The backend is not a new codebase, and not a second deployment either.** The member surface lives in
+`core-pftrust-service` under `/api/v1/me`, isolated at the controller only, and that service is deployed
+**once** — one set of business rules, one migration history, one Keycloak, one process. **Decided
+2026-09-16**: the plan had been a second deployment on 6065 behind `corepftessapi.mahindra.com`; that
+hostname is dropped and this portal calls the admin API.
+
+So ESS ships as a **UI deployment only** (6064), and this app is a cross-origin caller of that API. Two
+things must agree or the portal breaks in a way no screen explains: the CSP `connect-src` in
+`nginx/nginx.conf` and the build-time `VITE_API_BASE_URL`, both naming `corepftapi.mahindra.com`. The
+API side already names `corepftess.mahindra.com` in its CORS list and its 401 entry point.
 
 ## Build & run
 
