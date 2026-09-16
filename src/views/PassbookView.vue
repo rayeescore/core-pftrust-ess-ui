@@ -2,6 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import * as me from '@/api/me'
 import { displayDate, financialYear, money } from '@/composables/useFormat'
+import { useDownload } from '@/composables/useDownload'
+import AppBanner from '@/components/ui/AppBanner.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import FinancialYearSelect from '@/components/ui/FinancialYearSelect.vue'
@@ -25,6 +27,7 @@ const year = ref(2027)
 const taxView = ref('all')
 const passbook = ref(null)
 const years = ref([2027])
+const { busy, failure, download } = useDownload()
 
 const taxViews = [
   { value: 'all', label: 'All' },
@@ -63,13 +66,17 @@ const rows = computed(() => passbook.value?.rows ?? [])
         <SegmentedControl v-model="taxView" :options="taxViews" />
         <FinancialYearSelect v-model="year" :years="years" />
         <button
-          class="flex min-h-11 items-center gap-[9px] rounded-[10px] bg-brand-500 px-[18px] py-[11px] text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+          class="flex min-h-11 items-center gap-[9px] rounded-[10px] bg-brand-500 px-[18px] py-[11px] text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="busy !== null"
+          @click="download('monthly', () => me.getMonthlyStatement(year))"
         >
           <AppIcon name="download" :size="16" />
-          Statement
+          {{ busy ? 'Preparing…' : 'Statement' }}
         </button>
       </div>
     </header>
+
+    <AppBanner v-if="failure" tone="danger" title="That download did not work">{{ failure }}</AppBanner>
 
     <template v-if="passbook">
       <!-- SUMMARY -->

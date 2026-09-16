@@ -16,7 +16,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
  * type="file">` cannot be styled and reads as a different control on every browser, and this one has
  * to sit inside a row that already has its own shape. The button carries the 44px hit target.
  */
-const props = defineProps({
+defineProps({
   document: { type: Object, required: true },
   busy: { type: Boolean, default: false },
 })

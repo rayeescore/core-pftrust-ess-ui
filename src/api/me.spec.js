@@ -364,3 +364,42 @@ describe('claims', () => {
     expect(client.get).toHaveBeenCalledWith('/documents/d1', { responseType: 'blob' })
   })
 })
+
+describe('statements', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('fetches the index and unwraps the envelope', async () => {
+    const index = { annual: [{ year: 2026, publishedOn: '04-09-2026' }], monthly: [], loanHistory: false }
+    client.get.mockResolvedValue({ data: { data: index } })
+
+    expect(await me.getStatements()).toEqual(index)
+    expect(client.get).toHaveBeenCalledWith('/statements')
+  })
+
+  it('downloads a monthly statement by year, with the name the API gave it', async () => {
+    const blob = new Blob(['%PDF'])
+    client.get.mockResolvedValue({ data: blob, headers: { 'x-suggested-filename': 'monthly_statement_1_2026.pdf' } })
+
+    expect(await me.getMonthlyStatement(2026)).toEqual({ blob, filename: 'monthly_statement_1_2026.pdf' })
+    expect(client.get).toHaveBeenCalledWith('/statements/monthly', { params: { year: 2026 }, responseType: 'blob' })
+  })
+
+  it('asks for an annual statement by year alone -- never by version', async () => {
+    client.get.mockResolvedValue({ data: new Blob(['%PDF']), headers: {} })
+
+    const download = await me.getAnnualStatement(2026)
+
+    expect(client.get).toHaveBeenCalledWith('/statements/annual', { params: { year: 2026 }, responseType: 'blob' })
+    expect(download.filename).toBe('annual_statement_2026.pdf')
+  })
+
+  it('downloads the loan history and a receipt', async () => {
+    client.get.mockResolvedValue({ data: new Blob(['%PDF']), headers: {} })
+
+    await me.getLoanHistory()
+    expect(client.get).toHaveBeenCalledWith('/loans/history', { responseType: 'blob' })
+
+    await me.getLoanReceipt('l1')
+    expect(client.get).toHaveBeenCalledWith('/loans/l1/receipt', { responseType: 'blob' })
+  })
+})
