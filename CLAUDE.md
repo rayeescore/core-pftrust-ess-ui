@@ -25,7 +25,13 @@ cp .env.example .env.local     # then fill in
 npm install
 npm run dev                    # port 6064 -- 5173 belongs to the admin UI
 npm run build
+npm run lint                   # eslint 9 flat config, correctness rules only
 ```
+
+`eslint.config.js` was added on 2026-09-16: the `lint` script had existed since the first commit with no
+config to run against, so it failed before checking anything. The rules are `vue/flat/essential` plus the
+JS recommended set — what makes a component wrong, not how it is formatted, since this project's
+formatting is by hand.
 
 `VITE_USE_FIXTURES` has three settings, because the project is genuinely in three states at once:
 
