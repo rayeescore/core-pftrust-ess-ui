@@ -74,9 +74,20 @@ tracker, profile, corrections, transfer-in and its tracker, claims and the claim
 trust page — plus the shell, Keycloak auth with silent refresh, the API client, the formatting rules and
 the component set behind all of it.
 
-**The member API behind it is built too** (38 handlers in `core-pftrust-service`, as of 2026-09-15). Every
+**The member API behind it is built too** (43 handlers in `core-pftrust-service`, as of 2026-09-16). Every
 function in `src/api/me.js` is in the `LIVE` set; `VITE_USE_FIXTURES=partial` is now only a way to pull a
-single screen back to a fixture by deleting its line. Not built on either side: **statements**.
+single screen back to a fixture by deleting its line. Nothing on the brief is unbuilt on either side.
+
+**Downloads save a file; they do not open a tab.** `src/composables/useDownload.js` holds the state a
+view needs (`busy`, `failure`, `download`) and writes the blob out through a temporary `<a download>`.
+`window.open` after an `await` is the thing it avoids: by then the click's user activation has usually
+lapsed and a popup blocker — Safari's on a phone especially — may refuse the tab. It also reads the API's
+sentence out of a 404, which on a blob request arrives as a `Blob` rather than JSON.
+
+**Four older screens still open a blob in a new tab**, and should move onto `useDownload`:
+`TransferInDetailView`, `ClaimDetailView`, `ProfileView` and `HelpView`. They also read
+`failure.response?.data?.message` from what is a `Blob` on a blob request, so they never show the API's
+sentence. Left alone in phase 8 because the popup behaviour has not been confirmed on a device.
 
 One screen still depends on backend data that is missing, and says so where a member would otherwise be
 misled:
