@@ -44,7 +44,7 @@ function isRejected(loan) {
   <div class="flex flex-col gap-[22px]">
     <header class="flex flex-wrap items-end justify-between gap-7">
       <div class="flex flex-col gap-[7px]">
-        <h1 class="font-display text-[30px] leading-[1.15]">Your advances</h1>
+        <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Your advances</h1>
         <p class="text-[13.5px] text-ink-muted">
           Everything you have applied for, and where each one has got to.
         </p>

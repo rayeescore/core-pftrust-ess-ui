@@ -84,7 +84,7 @@ async function withdraw(request) {
 <template>
   <div v-if="profile" class="flex flex-col gap-5">
     <header class="flex flex-col gap-1.5">
-      <h1 class="font-display text-[30px] leading-[1.15]">Your details</h1>
+      <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Your details</h1>
       <p class="max-w-[72ch] text-sm leading-relaxed text-ink-muted">
         Held by the trust and used on every statement, advance and settlement. The PF department keeps
         these in step with payroll — ask them to change anything that is wrong.
@@ -122,14 +122,19 @@ async function withdraw(request) {
     </AppBanner>
     <p v-if="requestError" class="text-[12.5px] text-danger-700">{{ requestError }}</p>
 
-    <div class="grid items-start gap-5 lg:grid-cols-[1.3fr_1fr]">
+    <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.3fr_1fr]">
       <div class="flex flex-col gap-5">
         <section class="rounded-card border border-border bg-surface px-6 py-5">
+          <!--
+            The three "ask for a correction" links are standalone controls, not links inside a sentence,
+            and they are how every change to this page is made. `-my-3` pays back the height `min-h-11`
+            adds, so the tap target is 44px without the header row growing.
+          -->
           <div class="mb-1 flex items-baseline justify-between gap-3">
             <h2 class="eyebrow">About you</h2>
             <RouterLink
               to="/profile/corrections"
-              class="text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
+              class="-my-3 inline-flex min-h-11 items-center text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
             >
               Request a correction
             </RouterLink>
@@ -168,7 +173,7 @@ async function withdraw(request) {
         <section class="rounded-card border border-border bg-surface px-6 py-5">
           <div class="mb-3 flex items-baseline justify-between gap-3">
             <h2 class="eyebrow">Where you worked before</h2>
-            <button class="text-[12.5px] font-semibold text-brand-600">Add an employer</button>
+            <button class="min-h-11 text-[12.5px] font-semibold text-brand-600">Add an employer</button>
           </div>
           <div v-if="profile.previousEmployers.length" class="flex flex-col gap-3">
             <div
@@ -205,7 +210,7 @@ async function withdraw(request) {
             <h2 class="eyebrow">Your nominees</h2>
             <RouterLink
               to="/profile/corrections"
-              class="text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
+              class="-my-3 inline-flex min-h-11 items-center text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
               >Change</RouterLink
             >
           </div>
@@ -253,7 +258,7 @@ async function withdraw(request) {
             <h2 class="eyebrow">Where money is paid</h2>
             <RouterLink
               to="/profile/corrections"
-              class="text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
+              class="-my-3 inline-flex min-h-11 items-center text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
               >Request a change</RouterLink
             >
           </div>

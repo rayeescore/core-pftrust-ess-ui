@@ -96,6 +96,23 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /*
+   * THE 16px FLOOR ON CONTROLS, AND IT IS NOT A STYLE PREFERENCE.
+   *
+   * iOS Safari zooms the whole page in when a control under 16px takes focus, and it does not zoom
+   * back out when the field is left -- the member is then reading a portal at 1.3x, scrolling
+   * sideways to find the next field, for the rest of the form. `-webkit-text-size-adjust` above does
+   * not prevent it; only the control's own computed size does.
+   *
+   * `max(16px, 1em)` keeps the design's size wherever the design is already 16px or more and raises
+   * only the ones that would trigger it, so this can never shrink a control.
+   */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+
   body {
     background-color: var(--color-surface-sub);
     color: var(--color-ink);

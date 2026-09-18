@@ -162,14 +162,14 @@ async function saveAttachment(message) {
 <template>
   <div class="flex flex-col gap-5">
     <header class="flex flex-col gap-1.5">
-      <h1 class="font-display text-[30px] leading-[1.15]">Your questions</h1>
+      <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Your questions</h1>
       <p class="max-w-[72ch] text-sm leading-relaxed text-ink-muted">
         Anything you ask goes to the part of the PF department that handles it, and stays here as a
         conversation until it is settled.
       </p>
     </header>
 
-    <div v-if="tickets" class="grid items-start gap-5 lg:grid-cols-[0.85fr_1.4fr]">
+    <div v-if="tickets" class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[0.85fr_1.4fr]">
       <div class="flex flex-col gap-2.5">
         <button
           class="flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-brand-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
@@ -188,7 +188,7 @@ async function saveAttachment(message) {
             <span class="text-[12.5px] font-medium text-ink-muted">What is it about?</span>
             <select
               v-model="draft.category"
-              class="min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-sm outline-none"
+              class="min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-base outline-none"
             >
               <option value="" disabled>Choose one</option>
               <option v-for="category in categories" :key="category.code" :value="category.code">
@@ -202,7 +202,7 @@ async function saveAttachment(message) {
             <input
               v-model="draft.subject"
               maxlength="255"
-              class="min-h-11 rounded-[10px] border border-border-strong bg-surface px-3.5 text-sm outline-none"
+              class="min-h-11 rounded-[10px] border border-border-strong bg-surface px-3.5 text-base outline-none"
             />
           </label>
 
@@ -211,7 +211,7 @@ async function saveAttachment(message) {
             <textarea
               v-model="draft.details"
               rows="4"
-              class="resize-none rounded-[10px] border border-border-strong bg-surface px-3.5 py-3 text-sm outline-none"
+              class="resize-none rounded-[10px] border border-border-strong bg-surface px-3.5 py-3 text-base outline-none"
             />
           </label>
 
@@ -325,7 +325,7 @@ async function saveAttachment(message) {
             v-model="reply"
             rows="2"
             placeholder="Write a reply…"
-            class="w-full resize-none rounded-[10px] border border-border-strong bg-surface px-3.5 py-3 text-sm outline-none"
+            class="w-full resize-none rounded-[10px] border border-border-strong bg-surface px-3.5 py-3 text-base outline-none"
           />
 
           <p v-if="replyError" class="mt-2 text-[12.5px] text-danger-700">{{ replyError }}</p>

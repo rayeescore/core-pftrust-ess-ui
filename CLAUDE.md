@@ -153,7 +153,46 @@ section has its own ref rather than one shared `loading` flag.
 
 **Skeletons, never spinners.** Three card-shaped blanks tell a member three numbers are coming.
 
-**44px minimum hit target.** Most members are on a phone. `AppButton`'s `sm` size is desktop-only.
+**44px minimum hit target.** Most members are on a phone. `AppButton`'s `sm` size is desktop-only. A
+control inside a `<label>` is exempt, because the label's whole plate is the target — that is why the
+advance declaration's 16px checkbox is fine and a bare 20px `<button>` is not.
+
+## Mobile, and the four rules that keep it working
+
+Audited and fixed on 2026-09-18 across all eighteen routes at 320 / 360 / 390 / 430 / 768 / 1280, in
+both the loading and the loaded state. Four things had gone wrong, and each is a rule rather than a
+one-off fix — a headless CDP script that walks every route at every width, measures
+`documentElement.scrollWidth` against `clientWidth`, and reports control font sizes and target heights
+is the cheap way to re-check after any layout change.
+
+**A grid or flex item's automatic minimum is its min-content, so one unbreakable string widens the
+page.** The dashboard scrolled sideways by 66px on a 390px phone because an application card held a
+mono reference and a `whitespace-nowrap` status chip, and the single mobile column of
+`lg:grid-cols-[1.55fr_1fr]` sized itself to fit them. Every one of those thirteen sections now carries
+`*:min-w-0`, and a flex child that holds text next to something `shrink-0` needs `min-w-0` too. Note
+what does NOT fix it: `grid-cols-[minmax(0,1fr)]` floors the *track*, and the item still overflows it.
+
+**A control under 16px zooms iOS Safari in on focus, and it does not zoom back out.** Every field in
+the portal was 14–15px. `theme.css` now floors `input, select, textarea` at `max(16px, 1em)` in the
+base layer — but a `text-sm` utility on the control still beats it, because utilities outrank base, so
+do not put one there. `-webkit-text-size-adjust` does not help; only the computed size does.
+
+**Padding belongs to the control, not to the box around it.** `FormField` and `ChangeDiffRow` drew a
+46px plate with `py-3` and a 23px input inside it, so a thumb landing anywhere but on the text focused
+nothing. Both now use `py-0` with `[&>input]:min-h-11`.
+
+**The artboards include the mobile screens, and they are not a reflow of the desktop ones.**
+`PassbookMobile.dc.html` and `DashboardMobile.dc.html` are on the canvas. The passbook's eight-column
+table (`min-w-[900px]` in a scroller) showed a phone the month and half of one figure; below `sm` the
+same rows are cards with the month total on the face and the split on tap, which is the artboard and
+also §5.2 of the brief. The taxable filter is desktop-only there, and `ContributionYearChart`'s twelve
+month labels need ~300px against a phone card's ~220, so they are `hidden sm:flex`. Page headings are
+25px below `sm`.
+
+Two divergences from the mobile artboards are still open, and both are design rather than breakage:
+DashboardMobile draws the quick actions as a 2×2 grid of tiles (built: a vertical list), and trims the
+identity line to PF + unit with the status chip inline (built: PF, PERN, UAN and unit, chip on its own
+line).
 
 ## Tailwind 4 specifics
 

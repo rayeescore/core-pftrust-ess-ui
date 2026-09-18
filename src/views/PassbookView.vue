@@ -51,22 +51,46 @@ watch(year, load)
 const GRID = 'grid-cols-[1.5fr_0.95fr_1fr_1fr_0.95fr_0.9fr_1.05fr_1fr]'
 
 const rows = computed(() => passbook.value?.rows ?? [])
+
+/**
+ * Which month cards are open on a phone.
+ *
+ * Eight columns do not fit on a 390px screen, and the honest alternative -- a table 900px wide inside a
+ * horizontal scroller -- showed a member the month and about half of one figure, with nothing on screen
+ * saying the rest was there. So below `sm` the same rows are cards: the month, the day it posted and the
+ * month's total on the face, the your/company/VPF split on tap. This is PassbookMobile on the canvas,
+ * and it is what the design brief asked for in §5.2.
+ */
+const opened = ref(new Set())
+
+function toggle(key) {
+  // A new Set each time: mutating one in place is not a reactive change.
+  const next = new Set(opened.value)
+  next.has(key) ? next.delete(key) : next.add(key)
+  opened.value = next
+}
 </script>
 
 <template>
   <div class="flex flex-col gap-[22px]">
     <!-- HEADER -->
-    <header class="flex flex-wrap items-end justify-between gap-7">
+    <!--
+      `shrink-0` on the control group used to keep it at its 555px max-content width, so on a phone the
+      year picker and the statement button sat off the right edge of the screen entirely -- a member
+      could neither change the year nor download anything. The group wraps now, and the taxable filter
+      is desktop-only, as PassbookMobile draws it.
+    -->
+    <header class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-7">
       <div class="flex flex-col gap-[7px]">
-        <h1 class="font-display text-[30px] leading-[1.15]">Contribution passbook</h1>
+        <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Contribution passbook</h1>
         <p class="text-[13.5px] text-ink-muted">Every rupee in and out of your account, month by month.</p>
       </div>
 
-      <div class="flex shrink-0 flex-wrap items-center gap-3">
-        <SegmentedControl v-model="taxView" :options="taxViews" />
-        <FinancialYearSelect v-model="year" :years="years" />
+      <div class="flex flex-wrap items-center gap-3">
+        <SegmentedControl v-model="taxView" :options="taxViews" class="hidden sm:flex" />
+        <FinancialYearSelect v-model="year" :years="years" class="min-w-0 flex-1 sm:flex-none" />
         <button
-          class="flex min-h-11 items-center gap-[9px] rounded-[10px] bg-brand-500 px-[18px] py-[11px] text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+          class="flex min-h-11 shrink-0 items-center gap-[9px] rounded-[10px] bg-brand-500 px-[18px] py-[11px] text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="busy !== null"
           @click="download('monthly', () => me.getMonthlyStatement(year))"
         >
@@ -108,8 +132,8 @@ const rows = computed(() => passbook.value?.rows ?? [])
         </div>
       </div>
 
-      <!-- TABLE -->
-      <div class="overflow-x-auto rounded-card border border-border bg-surface">
+      <!-- TABLE — from `sm` up, where eight columns have somewhere to go. -->
+      <div class="hidden overflow-x-auto rounded-card border border-border bg-surface sm:block">
         <div class="min-w-[900px]">
           <div
             class="eyebrow eyebrow-faint grid gap-2.5 border-b border-border bg-surface-deep px-5 py-[11px] !text-[11px] !text-ink-muted"
@@ -209,6 +233,128 @@ const rows = computed(() => passbook.value?.rows ?? [])
             <p class="tabular text-right text-[14.5px] font-semibold">{{ money(passbook.closing) }}</p>
             <p />
           </div>
+        </div>
+      </div>
+
+      <!--
+        CARDS — the same rows below `sm`, per PassbookMobile on the canvas.
+
+        Not a reflow of the table: a month's total is on the face and the split is behind a tap, because
+        a member checking a phone wants to know that July went in, and only sometimes how it divided.
+      -->
+      <div class="flex flex-col gap-[9px] sm:hidden">
+        <template v-for="row in rows" :key="row.key">
+          <!-- OPENING BALANCE — brought forward, not a month. -->
+          <div
+            v-if="row.type === 'opening'"
+            class="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3.5"
+          >
+            <div class="flex min-w-0 flex-col gap-0.5">
+              <p class="text-sm font-semibold">Opening balance</p>
+              <p class="text-[11.5px]" style="color: var(--color-brand-700)">
+                Brought forward from {{ financialYear(year - 1) }}
+              </p>
+            </div>
+            <p class="tabular shrink-0 text-[15px] font-semibold">₹{{ money(row.total) }}</p>
+          </div>
+
+          <!-- A MONTH — total on the face, split on tap. -->
+          <div
+            v-else-if="row.type === 'month'"
+            class="rounded-xl border border-border bg-surface"
+          >
+            <button
+              class="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+              :aria-expanded="opened.has(row.key)"
+              @click="toggle(row.key)"
+            >
+              <span class="flex min-w-0 flex-col gap-0.5">
+                <span class="text-sm font-semibold">{{ row.month }}</span>
+                <span class="tabular text-[11.5px] text-ink-faint">
+                  Posted {{ displayDate(row.postedOn) }}
+                </span>
+              </span>
+              <span class="flex shrink-0 items-center gap-2">
+                <span class="tabular text-[15px] font-semibold">₹{{ money(row.total) }}</span>
+                <AppIcon
+                  name="chevronDown"
+                  :size="15"
+                  class="text-ink-faint transition-transform"
+                  :class="opened.has(row.key) ? 'rotate-180' : ''"
+                />
+              </span>
+            </button>
+            <dl
+              v-if="opened.has(row.key)"
+              class="mx-4 flex gap-4 border-t border-border-subtle py-3"
+            >
+              <div
+                v-for="part in [
+                  { label: 'Yours', value: row.member },
+                  { label: 'Company', value: row.company },
+                  { label: 'VPF', value: row.vpf },
+                  { label: 'PF base', value: row.pfBase },
+                ]"
+                :key="part.label"
+                class="flex flex-col gap-px"
+              >
+                <dt class="text-[11px] text-ink-faint">{{ part.label }}</dt>
+                <dd class="tabular text-[13px] font-medium">{{ money(part.value) }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- AN EVENT — money in or out, between the months it happened between. -->
+          <div
+            v-else-if="row.type === 'event'"
+            class="flex items-center gap-3 rounded-xl border border-border px-4 py-3"
+            style="background: oklch(0.985 0.004 80)"
+          >
+            <AppIcon
+              :name="row.direction === 'in' ? 'arrowIn' : 'arrowOut'"
+              :size="16"
+              class="shrink-0 text-ink-faint"
+            />
+            <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+              <p class="text-[13px] leading-[1.35] font-medium">{{ row.title }}</p>
+              <p class="tabular text-[11px] text-ink-faint">{{ displayDate(row.postedOn) }}</p>
+            </div>
+            <p class="tabular shrink-0 text-sm font-semibold">
+              {{ row.direction === 'in' ? '+' : '−' }}{{ money(row.amount) }}
+            </p>
+          </div>
+        </template>
+
+        <div
+          v-if="passbook.unpostedNote"
+          class="flex items-center gap-3 rounded-xl border border-dashed border-border-strong px-4 py-3.5"
+        >
+          <AppIcon name="clock" :size="16" class="shrink-0 text-ink-faintest" />
+          <p class="text-[12.5px] leading-[1.5] text-ink-faint">{{ passbook.unpostedNote }}</p>
+        </div>
+
+        <!-- The closing split, which on desktop is the table's footer row and lives nowhere else. -->
+        <div class="rounded-xl border border-border bg-surface-deep px-4 py-3.5">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-[13.5px] font-semibold">
+              Balance on {{ displayDate(passbook.closingDate) }}
+            </p>
+            <p class="tabular shrink-0 text-[15px] font-semibold">₹{{ money(passbook.closing) }}</p>
+          </div>
+          <dl class="mt-3 flex gap-4 border-t border-border py-0 pt-3">
+            <div
+              v-for="part in [
+                { label: 'Yours', value: passbook.totals.member },
+                { label: 'Company', value: passbook.totals.company },
+                { label: 'VPF', value: passbook.totals.vpf },
+              ]"
+              :key="part.label"
+              class="flex flex-col gap-px"
+            >
+              <dt class="text-[11px] text-ink-faint">{{ part.label }}</dt>
+              <dd class="tabular text-[13px] font-medium">{{ money(part.value) }}</dd>
+            </div>
+          </dl>
         </div>
       </div>
 

@@ -52,7 +52,7 @@ const initials = (name) =>
     <!-- TOP BAR -->
     <header class="no-print sticky top-0 z-20 h-16 border-b border-border bg-surface">
       <div class="flex h-full items-center justify-between px-5 sm:px-7">
-        <RouterLink to="/" class="flex items-center gap-[11px]">
+        <RouterLink to="/" class="flex min-h-11 items-center gap-[11px]">
           <span
             class="flex size-[30px] items-center justify-center rounded-lg bg-brand-500 text-white"
           >
@@ -67,7 +67,7 @@ const initials = (name) =>
         <div class="flex items-center gap-4 sm:gap-[18px]">
           <!-- Hindi and Marathi are on the roadmap; both faces already carry Devanagari. -->
           <button
-            class="flex items-center gap-[7px] rounded-full border border-border px-[13px] py-1.5 text-ink-muted transition-colors hover:bg-surface-sub"
+            class="flex min-h-11 items-center gap-[7px] rounded-full border border-border px-[13px] text-ink-muted transition-colors hover:bg-surface-sub"
             aria-label="Change language"
           >
             <AppIcon name="globe" :size="14" />
@@ -76,7 +76,7 @@ const initials = (name) =>
 
           <div class="relative">
             <button
-              class="flex items-center gap-2.5"
+              class="flex min-h-11 items-center gap-2.5"
               :aria-expanded="menuOpen"
               @click="menuOpen = !menuOpen"
             >
@@ -97,7 +97,7 @@ const initials = (name) =>
                 PF {{ identity?.pfNumber || '—' }}
               </p>
               <button
-                class="w-full rounded-md px-2.5 py-2 text-left text-sm text-ink-soft hover:bg-surface-sub"
+                class="min-h-11 w-full rounded-md px-2.5 text-left text-sm text-ink-soft hover:bg-surface-sub"
                 @click="logout()"
               >
                 Sign out

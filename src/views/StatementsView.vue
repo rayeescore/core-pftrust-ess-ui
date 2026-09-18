@@ -42,7 +42,7 @@ const empty = computed(
 <template>
   <div class="flex flex-col gap-5">
     <header class="flex flex-col gap-1.5">
-      <h1 class="font-display text-[30px] leading-[1.15]">Statements</h1>
+      <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Statements</h1>
       <p class="max-w-[72ch] text-sm leading-relaxed text-ink-muted">
         The documents the trust issues you, as PDFs, made from the same records the PF department works from.
       </p>

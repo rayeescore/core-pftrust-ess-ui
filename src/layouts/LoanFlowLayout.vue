@@ -26,7 +26,7 @@ defineEmits(['back', 'continue'])
     <LoanStepRail :current="step" />
 
     <header class="mb-[22px] flex flex-col gap-1.5">
-      <h1 class="font-display text-[30px] leading-[1.15]">{{ title }}</h1>
+      <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">{{ title }}</h1>
       <p v-if="intro" class="max-w-[66ch] text-sm leading-relaxed text-ink-muted">{{ intro }}</p>
     </header>
 

@@ -190,7 +190,7 @@ async function send() {
     </div>
 
     <header class="flex flex-col gap-1.5">
-      <h1 class="font-display text-[30px] leading-[1.15]">Claiming your provident fund</h1>
+      <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Claiming your provident fund</h1>
       <p class="max-w-[76ch] text-sm leading-relaxed text-ink-muted">
         You can take the money out, or move it to your next employer’s fund. Moving it keeps the interest
         running and stays untaxed.
@@ -252,7 +252,7 @@ async function send() {
         </button>
       </div>
 
-      <div class="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
+      <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.4fr_1fr]">
         <div class="flex flex-col gap-5">
           <section class="flex flex-col gap-4 rounded-card border border-border bg-surface px-6 py-[22px]">
             <h2 class="eyebrow">Why you left</h2>

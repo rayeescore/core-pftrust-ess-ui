@@ -40,7 +40,7 @@ onMounted(async () => {
 
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div class="flex flex-col gap-1.5">
-        <h1 class="font-display text-[30px] leading-[1.15]">{{ loan.title }}</h1>
+        <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">{{ loan.title }}</h1>
         <p class="flex flex-wrap items-center gap-2.5 text-[12.5px] text-ink-muted">
           <span class="font-mono">{{ loan.reference }}</span>
           <span class="size-[3px] rounded-full bg-border-strong" />
@@ -63,7 +63,7 @@ onMounted(async () => {
       </p>
     </section>
 
-    <div class="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
+    <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.4fr_1fr]">
       <div class="flex flex-col gap-5">
         <section class="rounded-card border border-border bg-surface px-6 py-[22px]">
           <h2 class="eyebrow mb-3">The advance</h2>
@@ -93,7 +93,7 @@ onMounted(async () => {
                 <AppIcon name="file" :size="15" class="text-ink-faint" />
                 {{ doc }}
               </span>
-              <button class="text-[12.5px] font-medium text-brand-700 hover:text-brand-600">View</button>
+              <button class="min-h-11 text-[12.5px] font-medium text-brand-700 hover:text-brand-600">View</button>
             </li>
           </ul>
         </section>
@@ -135,7 +135,7 @@ onMounted(async () => {
           <p class="mt-2 text-[13px] leading-[1.55] text-ink-soft">
             You cannot start another advance, for any purpose, until this one is settled or withdrawn.
           </p>
-          <button class="mt-3 text-[13px] font-semibold text-danger-700 hover:text-danger-500">
+          <button class="mt-3 min-h-11 text-[13px] font-semibold text-danger-700 hover:text-danger-500">
             Withdraw this application
           </button>
         </section>
