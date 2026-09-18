@@ -104,7 +104,7 @@ async function submit() {
     @back="router.push('/loans/apply/documents')"
     @continue="submit"
   >
-    <div class="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
+    <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.4fr_1fr]">
       <div class="flex flex-col gap-5">
         <section class="flex flex-col gap-5 rounded-card border border-border bg-surface px-6 py-[22px]">
           <div
@@ -120,7 +120,7 @@ async function submit() {
             <div class="flex items-baseline justify-between gap-3">
               <h2 class="eyebrow">{{ section.label }}</h2>
               <button
-                class="text-[12.5px] font-medium text-brand-700 hover:text-brand-600"
+                class="min-h-11 text-[12.5px] font-medium text-brand-700 hover:text-brand-600"
                 @click="router.push(section.to)"
               >
                 Change

@@ -53,7 +53,7 @@ const cappedNote = computed(() =>
     @back="router.push('/loans/apply')"
     @continue="router.push('/loans/apply/details')"
   >
-    <div class="grid items-start gap-5 lg:grid-cols-[1.15fr_1fr]">
+    <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.15fr_1fr]">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-5 rounded-card border border-border bg-surface px-6 py-[22px]">
           <FormField

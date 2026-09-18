@@ -40,7 +40,7 @@ const shown = ref(false)
 
     <button
       v-if="reveal"
-      class="shrink-0 rounded-lg border border-border px-3 py-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:bg-surface-sub"
+      class="min-h-11 shrink-0 rounded-lg border border-border px-3 text-[12px] font-medium text-ink-muted transition-colors hover:bg-surface-sub"
       @click="shown = !shown"
     >
       {{ shown ? 'Hide' : 'Show' }}

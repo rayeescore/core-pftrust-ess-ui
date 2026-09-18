@@ -88,7 +88,7 @@ const quickActions = [
     <!-- IDENTITY -->
     <section class="flex flex-wrap items-end justify-between gap-4">
       <div v-if="identity" class="flex flex-col gap-[7px]">
-        <h1 class="font-display text-[30px] leading-[1.15]">
+        <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">
           {{ greeting() }}, {{ identity.name.split(' ')[0] }}
         </h1>
         <div class="flex flex-wrap items-center gap-2.5">
@@ -104,9 +104,9 @@ const quickActions = [
           </template>
         </div>
       </div>
-      <div v-else class="flex flex-col gap-2">
-        <div class="h-9 w-72 animate-pulse rounded-md bg-surface-deep" />
-        <div class="h-4 w-96 animate-pulse rounded bg-surface-deep" />
+      <div v-else class="flex min-w-0 flex-1 flex-col gap-2">
+        <div class="h-9 w-full max-w-72 animate-pulse rounded-md bg-surface-deep" />
+        <div class="h-4 w-full max-w-96 animate-pulse rounded bg-surface-deep" />
       </div>
 
       <StatusChip v-if="identity" :label="identity.statusLabel" :tone="identity.statusTone" />
@@ -116,24 +116,26 @@ const quickActions = [
     <section
       v-for="alert in alerts"
       :key="alert.title"
-      class="flex items-center gap-3 rounded-xl border border-warning-200 bg-warning-50 px-[17px] py-[13px]"
+      class="flex items-start gap-3 rounded-xl border border-warning-200 bg-warning-50 px-[17px] py-[13px] sm:items-center"
     >
-      <AppIcon name="warning" :size="18" class="text-warning-500" />
-      <p class="flex-1 text-[13.5px] leading-relaxed text-warning-700">
-        <span class="font-semibold">{{ alert.title }}</span> {{ alert.body }}
-      </p>
-      <RouterLink
-        :to="alert.to"
-        class="shrink-0 text-[13px] font-semibold text-brand-700 hover:text-brand-600"
-      >
-        {{ alert.actionLabel }} →
-      </RouterLink>
+      <AppIcon name="warning" :size="18" class="mt-px shrink-0 text-warning-500 sm:mt-0" />
+      <div class="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+        <p class="flex-1 text-[13.5px] leading-relaxed text-warning-700">
+          <span class="font-semibold">{{ alert.title }}</span> {{ alert.body }}
+        </p>
+        <RouterLink
+          :to="alert.to"
+          class="shrink-0 text-[13px] font-semibold text-brand-700 hover:text-brand-600"
+        >
+          {{ alert.actionLabel }} →
+        </RouterLink>
+      </div>
     </section>
 
     <!-- BALANCE + BUCKETS -->
     <section class="flex flex-col gap-[22px] rounded-card border border-border bg-surface px-7 py-[26px]">
       <div class="flex flex-wrap items-start justify-between gap-6">
-        <div class="flex flex-col gap-2">
+        <div class="flex min-w-0 flex-1 flex-col gap-2">
           <p class="eyebrow">Your provident fund balance</p>
 
           <template v-if="balance">
@@ -159,14 +161,14 @@ const quickActions = [
               this page is up to date.
             </p>
             <button
-              class="mt-1 w-fit rounded-md border border-border px-3.5 py-2 text-[13px] font-medium transition-colors hover:bg-surface-sub"
+              class="mt-1 min-h-11 w-fit rounded-md border border-border px-3.5 text-[13px] font-medium transition-colors hover:bg-surface-sub"
               @click="$router.go(0)"
             >
               Try again
             </button>
           </template>
 
-          <div v-else class="h-14 w-72 animate-pulse rounded-md bg-surface-deep" />
+          <div v-else class="h-14 w-full max-w-72 animate-pulse rounded-md bg-surface-deep" />
         </div>
 
         <div v-if="balance" class="flex shrink-0 flex-col items-end gap-1 pt-1">
@@ -246,7 +248,7 @@ const quickActions = [
     </section>
 
     <!-- IN PROGRESS + RIGHT COLUMN -->
-    <section class="grid items-start gap-5 lg:grid-cols-[1.55fr_1fr]">
+    <section class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.55fr_1fr]">
       <div class="flex flex-col gap-4 rounded-card border border-border bg-surface px-6 py-[22px]">
         <div class="flex items-baseline justify-between">
           <h2 class="text-[17px] font-semibold">In progress</h2>
@@ -278,12 +280,16 @@ const quickActions = [
           :key="application.id"
           class="flex flex-col gap-3.5 rounded-xl border border-border px-[18px] py-4"
         >
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex flex-col gap-[3px]">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div class="flex min-w-0 flex-col gap-[3px]">
               <h3 class="text-[14.5px] font-semibold">{{ application.title }}</h3>
               <p class="font-mono text-[11.5px] text-ink-faint">{{ application.reference }}</p>
             </div>
-            <StatusChip :label="application.status.label" :tone="application.status.tone" />
+            <StatusChip
+              :label="application.status.label"
+              :tone="application.status.tone"
+              class="self-start"
+            />
           </div>
 
           <ApplicationProgress
@@ -292,7 +298,7 @@ const quickActions = [
           />
 
           <div class="flex flex-wrap items-end justify-between gap-4">
-            <p class="flex-1 text-[12.5px] leading-[1.5] text-ink-muted">{{ application.note }}</p>
+            <p class="min-w-0 flex-1 text-[12.5px] leading-[1.5] text-ink-muted">{{ application.note }}</p>
             <div v-if="application.amount" class="flex shrink-0 flex-col items-end gap-px">
               <p class="text-[11px] text-ink-faint">{{ application.amountLabel }}</p>
               <MoneyDisplay :amount="application.amount" size="sm" />

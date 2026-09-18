@@ -88,7 +88,7 @@ async function upload(doc, file) {
     @back="router.push('/loans/apply/details')"
     @continue="router.push('/loans/apply/review')"
   >
-    <div class="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
+    <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.4fr_1fr]">
       <section class="flex flex-col gap-3 rounded-card border border-border bg-surface px-6 py-[22px]">
         <div class="flex flex-wrap items-baseline justify-between gap-3">
           <h2 class="eyebrow">Required for this advance</h2>

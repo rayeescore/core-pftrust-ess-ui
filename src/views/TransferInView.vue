@@ -136,14 +136,14 @@ async function send() {
 <template>
   <div class="flex flex-col gap-5">
     <header class="flex flex-col gap-1.5">
-      <h1 class="font-display text-[30px] leading-[1.15]">Bring an old PF account here</h1>
+      <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Bring an old PF account here</h1>
       <p class="max-w-[76ch] text-sm leading-relaxed text-ink-muted">
         If a previous employer still holds provident fund in your name, the trust will write to them and
         have it moved into this account. It takes months, and almost none of it needs you.
       </p>
     </header>
 
-    <div class="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
+    <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.4fr_1fr]">
       <div class="flex flex-col gap-5">
         <section
           v-if="transferIns?.length"
@@ -238,7 +238,7 @@ async function send() {
             </div>
             <input ref="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="attach" />
             <button
-              class="flex min-h-9 items-center gap-2 rounded-lg border border-border-strong px-3.5 text-[12.5px] font-semibold transition-colors hover:bg-surface-sub disabled:opacity-60"
+              class="flex min-h-11 items-center gap-2 rounded-lg border border-border-strong px-3.5 text-[12.5px] font-semibold transition-colors hover:bg-surface-sub disabled:opacity-60"
               :disabled="uploading"
               @click="fileInput.click()"
             >

@@ -58,7 +58,7 @@ const details = computed(() => {
 <template>
   <div class="flex flex-col gap-[22px]">
     <header class="flex flex-col gap-[7px]">
-      <h1 class="font-display text-[30px] leading-[1.15]">Know your trust</h1>
+      <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Know your trust</h1>
       <p class="max-w-[72ch] text-[13.5px] leading-relaxed text-ink-muted">
         Your provident fund is held by an exempted trust, not by the regional PF office. That is why
         your statements come from here rather than the EPFO portal, and why your balance does not

@@ -14,6 +14,11 @@ import { computed } from 'vue'
  *
  * Only `awaiting-final` is a filled chip. It is the one state where something is about to happen, and
  * the canvas gives it the emphasis for exactly that reason.
+ *
+ * It does NOT set `whitespace-nowrap`, and that is deliberate. The labels are sentences the API writes
+ * -- "Accepted — waiting for your previous fund" is 41 characters -- and a nowrap chip with `shrink-0`
+ * held that at 276px, which is wider than a 320px phone can show. `max-w-full` caps it at its container
+ * and the label wraps. A status a member cannot read is worse than a pill on two lines.
  */
 const props = defineProps({
   label: { type: String, required: true },
@@ -37,7 +42,7 @@ const tone = computed(() => tones[props.tone] ?? tones.neutral)
 
 <template>
   <span
-    class="inline-flex shrink-0 items-center gap-[7px] rounded-full border py-[5px] pr-3 pl-[9px] text-[12.5px] font-medium whitespace-nowrap"
+    class="inline-flex max-w-full shrink-0 items-center gap-[7px] rounded-full border py-[5px] pr-3 pl-[9px] text-[12.5px] font-medium"
     :class="tone.chip"
   >
     <span class="size-1.5 shrink-0 rounded-full" :class="tone.dot" />

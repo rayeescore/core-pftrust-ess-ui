@@ -52,7 +52,7 @@ async function save(documentId) {
 
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div class="flex flex-col gap-1.5">
-        <h1 class="font-display text-[30px] leading-[1.15]">{{ claim.title }}</h1>
+        <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">{{ claim.title }}</h1>
         <p class="flex flex-wrap items-center gap-2.5 text-[12.5px] text-ink-muted">
           <span class="font-mono">{{ claim.reference }}</span>
           <template v-if="claim.appliedOn">
@@ -73,7 +73,7 @@ async function save(documentId) {
 
     <p v-if="failed" class="text-[12.5px] text-danger-700" role="alert">{{ failed }}</p>
 
-    <div class="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
+    <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.4fr_1fr]">
       <section class="rounded-card border border-border bg-surface px-6 py-[22px]">
         <h2 class="eyebrow mb-3">Your claim</h2>
         <dl class="flex flex-col">
@@ -105,7 +105,7 @@ async function save(documentId) {
             v-for="doc in claim.documents"
             :key="doc.id"
             type="button"
-            class="mt-2 block text-left text-[13px] font-medium text-brand-700 hover:text-brand-600"
+            class="mt-2 block min-h-11 text-left text-[13px] font-medium text-brand-700 hover:text-brand-600"
             @click="save(doc.id)"
           >
             {{ doc.name }}

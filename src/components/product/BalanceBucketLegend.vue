@@ -39,7 +39,7 @@ const open = ref(false)
     </dl>
 
     <button
-      class="mt-3 flex min-h-[30px] w-full items-center justify-between border-t border-border-subtle pt-[13px] text-left"
+      class="mt-3 flex min-h-11 w-full items-center justify-between border-t border-border-subtle pt-[13px] text-left"
       :aria-expanded="open"
       @click="open = !open"
     >

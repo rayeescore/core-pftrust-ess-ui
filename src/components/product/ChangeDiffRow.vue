@@ -34,7 +34,7 @@ defineProps({
       <div class="min-w-[9rem] flex-1">
         <p class="text-[11.5px] font-medium" style="color: var(--color-brand-700)">Should be</p>
         <div
-          class="mt-1 flex min-h-[46px] items-center rounded-[10px] border border-brand-500 bg-surface px-3.5 py-3 text-[15px]"
+          class="mt-1 flex min-h-[46px] items-center rounded-[10px] border border-brand-500 bg-surface px-3.5 py-0 text-[15px] [&>input]:min-h-11 [&>select]:min-h-11"
           :class="mono ? 'font-mono text-sm' : ''"
         >
           <slot />

@@ -243,14 +243,14 @@ async function send() {
 <template>
   <div class="flex flex-col gap-5">
     <header class="flex flex-col gap-1.5">
-      <h1 class="font-display text-[30px] leading-[1.15]">Ask for a correction</h1>
+      <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Ask for a correction</h1>
       <p class="max-w-[72ch] text-sm leading-relaxed text-ink-muted">
         Your details come from payroll and cannot be edited here. Tell us what is wrong and the PF
         department will check it and put it right.
       </p>
     </header>
 
-    <div v-if="profile" class="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
+    <div v-if="profile" class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.4fr_1fr]">
       <div class="flex flex-col gap-5">
         <section class="flex flex-col gap-5 rounded-card border border-border bg-surface px-6 py-[22px]">
           <h2 class="eyebrow">How to reach you</h2>
@@ -295,7 +295,7 @@ async function send() {
                 </span>
                 <div
                   v-if="!nominee.removed"
-                  class="flex min-h-[46px] w-24 items-center rounded-[10px] border border-brand-500 bg-surface px-3"
+                  class="flex min-h-[46px] w-24 items-center rounded-[10px] border border-brand-500 bg-surface px-3 [&>input]:min-h-11"
                 >
                   <input
                     v-model="nominee.proposed"
@@ -328,7 +328,7 @@ async function send() {
                 <span class="text-[11.5px] text-ink-faint">Name</span>
                 <input
                   v-model="newNominee.name"
-                  class="min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-sm outline-none"
+                  class="min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-base outline-none"
                 />
               </label>
               <label class="flex min-w-[8rem] flex-1 flex-col gap-1">
@@ -336,7 +336,7 @@ async function send() {
                 <input
                   v-model="newNominee.relationship"
                   placeholder="Daughter, spouse, mother…"
-                  class="min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-sm outline-none"
+                  class="min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-base outline-none"
                 />
               </label>
               <label class="flex w-24 flex-col gap-1">
@@ -344,7 +344,7 @@ async function send() {
                 <input
                   v-model="newNominee.share"
                   inputmode="numeric"
-                  class="tabular min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-right text-sm outline-none"
+                  class="tabular min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-right text-base outline-none"
                 />
               </label>
               <button
@@ -435,7 +435,7 @@ async function send() {
               v-model="note"
               rows="3"
               placeholder="Optional — for example, why the number changed."
-              class="w-full resize-none rounded-[10px] border border-border-strong bg-surface px-3.5 py-3 text-sm outline-none"
+              class="w-full resize-none rounded-[10px] border border-border-strong bg-surface px-3.5 py-3 text-base outline-none"
             />
           </div>
         </section>

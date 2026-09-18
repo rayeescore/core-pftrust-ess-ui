@@ -21,7 +21,7 @@ defineEmits(['update:modelValue'])
 <template>
   <div class="relative">
     <select
-      class="min-h-11 w-full min-w-[176px] appearance-none rounded-[10px] border border-border-strong bg-surface py-2.5 pr-10 pl-4 text-sm font-medium"
+      class="min-h-11 w-full min-w-[9.5rem] appearance-none rounded-[10px] border border-border-strong bg-surface py-2.5 pr-10 pl-4 text-base font-medium sm:min-w-[176px]"
       :value="modelValue"
       @change="$emit('update:modelValue', Number($event.target.value))"
     >
