@@ -1,0 +1,33 @@
+# The ESS portal: nginx serving the built SPA on 6064. There is no ESS backend to run beside it -- the
+# browser calls corepftapi.mahindra.com directly -- so this is the whole deployment.
+#
+#   docker compose -f docker-compose-files/production/core-pftrust-ess-ui-docker-compose.yaml up -d --build
+#
+# BUILD_MODE picks the .env.<mode> file baked into the bundle (mahindra by default). It is read at build
+# time only: changing it means rebuilding the image, not restarting the container.
+name: core-pftrust-ess-ui
+
+services:
+  core-pftrust-ess-ui:
+    container_name: core-pftrust-ess-ui
+    image: core-pftrust-ess-ui:0.1.0
+    build:
+      context: ../..
+      args:
+        BUILD_MODE: ${BUILD_MODE:-mahindra}
+    restart: unless-stopped
+    ports:
+      - "6064:8080"
+    # The CentOS 7 host's outdated seccomp profile rejects nginx's pwrite()
+    # syscall, so nginx exits at startup writing its pid file. Running
+    # unprivileged does not avoid it (core-pftrust-ui 3c55d72); only this
+    # does. Drop it once the host's Docker/libseccomp is upgraded.
+    security_opt:
+      - seccomp:unconfined
+    healthcheck:
+      # 127.0.0.1, not localhost: nginx listens on IPv4 only, and busybox wget may try ::1 first.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

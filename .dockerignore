@@ -1,0 +1,8 @@
+# COPY . . in the Dockerfile would otherwise carry these into the build stage.
+node_modules
+dist
+.git
+.idea
+# Vite loads .env.local in every mode, above .env.<mode>: a developer's VITE_USE_FIXTURES=true would
+# ship in the production bundle.
+*.local

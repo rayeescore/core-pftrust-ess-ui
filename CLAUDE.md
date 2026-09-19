@@ -210,7 +210,11 @@ are statement download and balance.
 ## Deployment
 
 Same shape as `core-pftrust-ui`: multi-stage Dockerfile, nginx serving `dist` with history-mode
-fallthrough and a CSP. The CSP's `blob:` entries in `connect-src`, `img-src` and `worker-src` are for PDF
+fallthrough and a CSP. nginx is `nginxinc/nginx-unprivileged` (UID 101, container port 8080, `GET /health`),
+and `docker-compose-files/production/` maps host 6064 → 8080 with `seccomp:unconfined` — the CentOS 7
+EC2 host's outdated seccomp profile rejects nginx's `pwrite()`, so without it the container exits at
+startup. Drop that once the host's Docker/libseccomp is upgraded. `.dockerignore` keeps `*.local` out of
+the build, because Vite reads `.env.local` above `.env.<mode>`. The CSP's `blob:` entries in `connect-src`, `img-src` and `worker-src` are for PDF
 previews and break silently if removed.
 
 **Before this can call the API at all**, `corepftess.mahindra.com` has to be added to
