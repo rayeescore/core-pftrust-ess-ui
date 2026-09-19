@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build-mahindra": "vite build --mode mahindra",
+    "build-coreintegra": "vite build --mode coreintegra",
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "test": "vitest run",
