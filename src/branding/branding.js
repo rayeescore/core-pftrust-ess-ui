@@ -28,6 +28,16 @@ import { reactive } from 'vue'
 const DEFAULT_SHORT_NAME = 'CorePF Trust'
 
 /**
+ * The tab as index.html leaves it, captured before anything overwrites it.
+ *
+ * Read rather than repeated, so the built-in default IS what the file says and the two cannot drift.
+ * index.html keeps its <title> for exactly this reason.
+ *
+ * Module scope is safe: main.js imports this module, and main.js runs after the document is parsed.
+ */
+const DEFAULT_TITLE = window.document.title
+
+/**
  * An AssetRef's `url` is a path -- `/api/v1/branding/asset/ESS_LOGO?v=...` -- because the server does
  * not know which origin it is being reached on. The browser does.
  *
@@ -110,7 +120,7 @@ function applyPalette() {
   })
 
   // The three stacked-bar weights, in the order the server sends them: bucket-1 is the brand itself.
-  ;(ess.buckets || []).forEach((value, index) => {
+  ;(ess.buckets || []).slice(0, 3).forEach((value, index) => {
     if (value) {
       root.style.setProperty(`--color-bucket-${index + 1}`, value)
     }
@@ -123,6 +133,33 @@ function applyPalette() {
   if (ess.onBrand) {
     root.style.setProperty('--color-on-brand', ess.onBrand)
   }
+}
+
+/**
+ * The tab: its title and its icon.
+ *
+ * The title falls back to index.html's; the icon has nothing to fall back to, because this portal ships
+ * no icon asset and its tab is blank today. So an absent favicon leaves the tab exactly as it was rather
+ * than pointing it at a URL that would 404.
+ */
+function applyChrome() {
+  window.document.title = branding.essPortalName || DEFAULT_TITLE
+
+  const url = assetUrl(branding.favicon)
+
+  if (!url) {
+    return
+  }
+
+  let link = window.document.querySelector("link[rel='icon']")
+
+  if (!link) {
+    link = window.document.createElement('link')
+    link.setAttribute('rel', 'icon')
+    window.document.head.appendChild(link)
+  }
+
+  link.setAttribute('href', url)
 }
 
 /**
@@ -153,5 +190,11 @@ export async function load() {
     applyPalette()
   } catch (error) {
     console.warn('The tenant palette could not be applied; using the built-in one.', error)
+  }
+
+  try {
+    applyChrome()
+  } catch (error) {
+    console.warn("The tab's title or icon could not be applied; using the built-in ones.", error)
   }
 }

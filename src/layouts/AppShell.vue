@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { logout } from '@/keycloak/keycloak'
+import { essLogoUrl, shortName } from '@/branding/branding'
 import AppIcon from '@/components/ui/AppIcon.vue'
 
 /**
@@ -38,6 +39,22 @@ const mobileNav = [
 
 const menuOpen = ref(false)
 
+/**
+ * The tenant's mark, and the one this portal draws when there is none.
+ *
+ * ESS had no logo image at all before branding was configurable -- the AppIcon mark doubled as the
+ * Dashboard item, and it is what an unconfigured tenant still gets. The <img> falls back to it on an
+ * error too: a logo can be removed from the staff portal between this document being read and the
+ * bytes being fetched, and a broken image in the app bar is the most visible failure this portal has.
+ *
+ * The name stays beside the mark in both cases. The logo does not replace the trust's name; it sits
+ * next to it, which is what the artboards draw and what keeps the portal legible if the image is a
+ * square device rather than a wordmark.
+ */
+const logoFailed = ref(false)
+const logo = computed(() => (logoFailed.value ? null : essLogoUrl()))
+const name = computed(() => shortName())
+
 const initials = (name) =>
   (name || '?')
     .split(' ')
@@ -53,13 +70,21 @@ const initials = (name) =>
     <header class="no-print sticky top-0 z-20 h-16 border-b border-border bg-surface">
       <div class="flex h-full items-center justify-between px-5 sm:px-7">
         <RouterLink to="/" class="flex min-h-11 items-center gap-[11px]">
+          <img
+            v-if="logo"
+            :src="logo"
+            alt=""
+            class="size-[30px] rounded-lg object-contain"
+            @error="logoFailed = true"
+          />
           <span
+            v-else
             class="flex size-[30px] items-center justify-center rounded-lg bg-action-fill text-on-brand"
           >
             <AppIcon name="home" :size="17" />
           </span>
           <span class="flex flex-col leading-none">
-            <span class="font-display text-base leading-[1.1]">CorePF Trust</span>
+            <span class="font-display text-base leading-[1.1]">{{ name }}</span>
             <span class="text-[10.5px] uppercase tracking-[0.07em] text-ink-faint">Member portal</span>
           </span>
         </RouterLink>

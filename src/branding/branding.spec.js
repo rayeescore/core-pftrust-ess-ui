@@ -150,3 +150,32 @@ describe('the palette', () => {
     expect(document.documentElement.getAttribute('style')).toBeNull()
   })
 })
+
+describe('the tab', () => {
+  it('takes its title from essPortalName', async () => {
+    await boot(CONFIGURED)
+
+    expect(document.title).toBe('M&M PF Trust — Member portal')
+  })
+
+  it("keeps index.html's title when the tenant has not named the portal", async () => {
+    await boot({ shortName: 'M&M PF Trust', version: 'c41e' })
+
+    expect(document.title).toBe('CorePF Trust — Member portal')
+  })
+
+  it('points a created icon link at the tenant favicon', async () => {
+    await boot(CONFIGURED)
+
+    expect(document.querySelector("link[rel='icon']").getAttribute('href')).toBe(
+      'http://api.test/api/v1/branding/asset/FAVICON?v=7b40',
+    )
+  })
+
+  /** index.html ships no icon link and this repo has no icon asset, so there is nothing to fall back to. */
+  it('adds no icon link when the tenant has no favicon', async () => {
+    await boot({ version: 'c41e' })
+
+    expect(document.querySelector("link[rel='icon']")).toBeNull()
+  })
+})
