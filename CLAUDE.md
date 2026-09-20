@@ -200,12 +200,54 @@ There is **no `tailwind.config.js`** — v4 is CSS-first. The design system is t
 `src/assets/theme.css`, and every custom property there becomes both a utility class and a runtime CSS
 variable (so charts can read the same palette). Tailwind is a Vite plugin here, not a PostCSS step.
 
+The block is plain `@theme`, not `@theme inline`, and that is load-bearing — see "Branding is served,
+not built in".
+
 Colours are authored in **oklch**, not hex. `#d90f2d` is exactly the kind of saturated red that shifts
 when a naive hex conversion meets a wide-gamut display.
 
 v4 needs Safari 16.4+ / Chrome 111+ / Firefox 128+. For a portal reaching whatever phone people actually
 have that is a real exclusion, and it has not been resolved — the two things that must work on anything
 are statement download and balance.
+
+## Branding is served, not built in
+
+**Since 2026-09-19** the portal's colours, its mark, its tab and the PF department's contact strings come
+from `GET /api/v1/branding` — the tenant's own row in `tenant_configuration`, read once at boot by
+`src/branding/branding.js` before `app.mount()`. This is phase 3 of the tenant configuration series;
+phase 1 (the service) and phase 2 (the staff portal, where a `TRUST_ADMIN` edits all of it) are its
+dependencies, and the design is
+`core-pftrust-service/docs/superpowers/specs/2026-09-18-tenant-configuration-design.md`.
+
+**The whole retint is eleven custom properties on `:root`.** Tailwind 4's `@theme` compiles to real
+custom properties and every utility reads them through `var()`, so setting
+`--color-brand-500`, `--color-brand-{50,100,600,700}`, `--color-bucket-{1,2,3}`, `--color-action-fill`
+and `--color-on-brand` on `document.documentElement` repaints every screen with no rebuild.
+**Never change `@theme` to `@theme inline`** — that bakes each value into its utilities and ends this
+silently, everywhere at once.
+
+**No palette arithmetic happens in the browser.** The ramp, the buckets and the action pair are derived
+server-side in OKLCH from one hex per portal, so this portal and the staff portal cannot drift. The
+module only ever paints what it is handed, and every value it does not receive falls back to the literal
+in `theme.css` — which is why an unconfigured tenant looks exactly like `main` did before this.
+
+**`--color-action-fill` and `--color-on-brand` are a pair and are not `brand-500` and white.** The
+server derives them together so the text on a filled control clears 4.5:1: white on the brand where it
+passes, ink where it does not, a darkened fill where neither does. `brand-500` stays the tenant's raw
+colour for bars and chart fills. Anything with text or an icon on top takes the pair —
+`bg-action-fill text-on-brand` — and `grep -rn "bg-brand-500 .* text-white" src` must stay empty.
+
+**The branding read does not go through `src/api/client.js`.** That client prefixes `/api/v1/me` and
+attaches a bearer token; this endpoint is public and is read before Keycloak has produced one. It builds
+its absolute URL from `VITE_API_BASE_URL` because there is no global axios baseURL in this app.
+
+**It runs in fixture mode too**, which is what lets the whole portal be checked in a browser with no
+sign-in: `VITE_USE_FIXTURES=true npm run dev` against a running API paints the tenant's real branding
+over fixture data.
+
+`nginx/nginx.conf`'s `img-src` names the API origin. Without it the logo and favicon are blocked with
+nothing on screen to say so, and the shell's built-in mark takes over — which looks exactly like a
+tenant who uploaded nothing.
 
 ## Deployment
 
