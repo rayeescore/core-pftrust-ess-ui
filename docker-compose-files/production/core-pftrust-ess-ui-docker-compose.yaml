@@ -16,6 +16,14 @@ services:
       args:
         BUILD_MODE: ${BUILD_MODE:-mahindra}
     restart: unless-stopped
+    # Caps, not a sizing exercise: this container serves static files, and a few hundred MB is far more
+    # than nginx uses. They are here so a runaway container cannot take the host's other services down
+    # with it. `cpus`/`mem_limit` rather than `deploy.resources`, because the EC2 host's Docker is old
+    # and outside swarm a `deploy` block is ignored by compose v1 -- the limits would silently not apply.
+    cpus: 1.0
+    mem_limit: 256m
+    mem_reservation: 64m
+    pids_limit: 200
     ports:
       - "6064:8080"
     # The CentOS 7 host's outdated seccomp profile rejects nginx's pwrite()
