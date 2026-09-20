@@ -1,0 +1,114 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('axios', () => ({ default: { get: vi.fn() } }))
+
+/**
+ * A document shaped exactly as BrandingRecord serialises one.
+ *
+ * The `admin` half is here on purpose: this portal must read straight past it. Its values are hex and
+ * this portal's are oklch, so a module that took the wrong half would paint something plausible.
+ */
+const CONFIGURED = {
+  shortName: 'M&M PF Trust',
+  portalName: 'Core PFT',
+  essPortalName: 'M&M PF Trust — Member portal',
+  supportEmail: 'pf.trust@example.com',
+  supportPhone: '+91 22 0000 0000',
+  admin: {
+    brand: { 50: '#fdeef0', 100: '#f9c9cf', 500: '#d90f2d', 600: '#b60d26', 700: '#8f0a1e' },
+    actionFill: '#d90f2d',
+    onBrand: '#ffffff',
+  },
+  ess: {
+    brand: {
+      50: 'oklch(0.968 0.019 23.56)',
+      100: 'oklch(0.925 0.048 23.56)',
+      500: 'oklch(0.562 0.222 23.56)',
+      600: 'oklch(0.497 0.199 23.56)',
+      700: 'oklch(0.426 0.166 23.56)',
+    },
+    buckets: ['oklch(0.562 0.222 23.56)', 'oklch(0.700 0.139 23.56)', 'oklch(0.850 0.069 23.56)'],
+    actionFill: 'oklch(0.562 0.222 23.56)',
+    onBrand: '#ffffff',
+    logo: { url: '/api/v1/branding/asset/ESS_LOGO?v=91cd', checksum: '91cd' },
+  },
+  favicon: { url: '/api/v1/branding/asset/FAVICON?v=7b40', checksum: '7b40' },
+  version: 'c41e',
+}
+
+/** A fresh copy of the module, loaded with `data`. */
+async function boot(data) {
+  const axios = (await import('axios')).default
+  axios.get.mockResolvedValue({ data })
+
+  const module = await import('@/branding/branding')
+  await module.load()
+
+  return { ...module, axios }
+}
+
+beforeEach(() => {
+  vi.resetModules()
+  vi.clearAllMocks()
+  document.title = 'CorePF Trust — Member portal'
+  document.documentElement.removeAttribute('style')
+  document.querySelector("link[rel='icon']")?.remove()
+})
+
+describe('load', () => {
+  it('reads the public document, unwrapped, from the API origin', async () => {
+    const { branding, axios } = await boot(CONFIGURED)
+
+    expect(axios.get).toHaveBeenCalledWith('http://api.test/api/v1/branding', { timeout: 5000 })
+    expect(branding.shortName).toBe('M&M PF Trust')
+    expect(branding.ess.actionFill).toBe('oklch(0.562 0.222 23.56)')
+  })
+
+  it('sends no token and asks for nothing under /me', async () => {
+    const { axios } = await boot(CONFIGURED)
+
+    const [url, config] = axios.get.mock.calls[0]
+    expect(url).not.toMatch(/\/me/)
+    expect(JSON.stringify(config)).not.toMatch(/authorization/i)
+  })
+
+  it('never rejects when the endpoint is unreachable, and changes nothing', async () => {
+    const axios = (await import('axios')).default
+    axios.get.mockRejectedValue(new Error('ECONNREFUSED'))
+    const module = await import('@/branding/branding')
+
+    await expect(module.load()).resolves.toBeUndefined()
+
+    expect(module.shortName()).toBe('CorePF Trust')
+    expect(document.title).toBe('CorePF Trust — Member portal')
+    expect(document.documentElement.getAttribute('style')).toBeNull()
+  })
+})
+
+describe('the accessors', () => {
+  it('makes an asset path absolute and answers null for an absent one', async () => {
+    const { assetUrl, essLogoUrl } = await boot(CONFIGURED)
+
+    expect(assetUrl({ url: '/api/v1/branding/asset/ESS_LOGO?v=91cd' })).toBe(
+      'http://api.test/api/v1/branding/asset/ESS_LOGO?v=91cd',
+    )
+    expect(assetUrl(null)).toBeNull()
+    expect(essLogoUrl()).toBe('http://api.test/api/v1/branding/asset/ESS_LOGO?v=91cd')
+  })
+
+  it('answers null for a logo and contacts the tenant has not set', async () => {
+    const { essLogoUrl, supportEmail, supportPhone, shortName } = await boot({ version: 'c41e' })
+
+    expect(essLogoUrl()).toBeNull()
+    expect(supportEmail()).toBeNull()
+    expect(supportPhone()).toBeNull()
+    expect(shortName()).toBe('CorePF Trust')
+  })
+
+  it('answers the configured contacts', async () => {
+    const { supportEmail, supportPhone } = await boot(CONFIGURED)
+
+    expect(supportEmail()).toBe('pf.trust@example.com')
+    expect(supportPhone()).toBe('+91 22 0000 0000')
+  })
+})
