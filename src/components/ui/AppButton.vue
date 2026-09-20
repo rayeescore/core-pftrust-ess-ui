@@ -21,6 +21,11 @@ const props = defineProps({
    *
    * For a mailto: or tel:, which is a link and should behave like one -- middle-clickable, copyable,
    * and handed to the mail client by the browser rather than by a handler of ours.
+   *
+   * An anchor ignores `disabled` and `loading`: `:disabled` is invalid on <a> so it is left undefined,
+   * and `disabled:opacity-50` never matches, so `href` renders a fully live link regardless of either
+   * prop. Only mailto: uses href today; a future caller needing a disabled link should ask for that
+   * rather than assume it works.
    */
   href: { type: String, default: null },
 })

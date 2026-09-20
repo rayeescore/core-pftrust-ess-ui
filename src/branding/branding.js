@@ -120,6 +120,8 @@ function applyPalette() {
   })
 
   // The three stacked-bar weights, in the order the server sends them: bucket-1 is the brand itself.
+  // .slice(0, 3) is the eleven-properties contract above, not defensive padding: a longer array must
+  // never write a --color-bucket-4.
   ;(ess.buckets || []).slice(0, 3).forEach((value, index) => {
     if (value) {
       root.style.setProperty(`--color-bucket-${index + 1}`, value)
@@ -176,10 +178,23 @@ function applyChrome() {
 export async function load() {
   try {
     const response = await axios.get(`${API_ORIGIN}/api/v1/branding`, { timeout: 5000 })
+    const { data } = response
 
-    // Replace rather than merge, so a value cleared on the server is cleared here too.
-    Object.keys(branding).forEach((key) => delete branding[key])
-    Object.assign(branding, response.data || {})
+    // A string (nginx's SPA rewrite handing back index.html because VITE_API_BASE_URL is empty or
+    // points at the portal's own origin) or an array -- typeof 'object', but just as wrong here -- would
+    // otherwise spread into numeric keys that every accessor quietly finds nothing on, so the misconfig-
+    // uration would look identical to a tenant who configured nothing.
+    if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+      console.warn(
+        'The branding endpoint answered something other than a document -- check VITE_API_BASE_URL. Using the built-in defaults.',
+      )
+    } else {
+      // Replace rather than merge, so a value cleared on the server is cleared here too -- true of this
+      // object; :root is not merge-replaced the same way (see applyPalette), so a colour cleared on the
+      // server would stay painted until reload.
+      Object.keys(branding).forEach((key) => delete branding[key])
+      Object.assign(branding, data)
+    }
   } catch (error) {
     console.warn('The branding document could not be read; using the built-in defaults.', error)
   }

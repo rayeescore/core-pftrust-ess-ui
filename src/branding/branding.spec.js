@@ -83,6 +83,26 @@ describe('load', () => {
     expect(document.title).toBe('CorePF Trust — Member portal')
     expect(document.documentElement.getAttribute('style')).toBeNull()
   })
+
+  /**
+   * What nginx's `try_files $uri $uri/ /index.html` answers when VITE_API_BASE_URL is empty or points
+   * at the portal's own origin: a 200 whose body is index.html, not the branding document. Without a
+   * shape guard, Object.assign spreads the string's characters into numeric keys, every accessor finds
+   * nothing and quietly falls back, and the misconfiguration looks identical to an unconfigured tenant.
+   */
+  it('warns and leaves the document empty when the endpoint answers something other than a document', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const { branding, shortName, essLogoUrl } = await boot('<!doctype html><html></html>')
+
+    expect(branding).toEqual({})
+    expect(shortName()).toBe('CorePF Trust')
+    expect(essLogoUrl()).toBeNull()
+    expect(document.documentElement.getAttribute('style')).toBeNull()
+    expect(warn).toHaveBeenCalled()
+
+    warn.mockRestore()
+  })
 })
 
 describe('the accessors', () => {

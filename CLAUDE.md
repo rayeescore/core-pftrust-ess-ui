@@ -237,6 +237,17 @@ passes, ink where it does not, a darkened fill where neither does. `brand-500` s
 colour for bars and chart fills. Anything with text or an icon on top takes the pair —
 `bg-action-fill text-on-brand` — and `grep -rn "bg-brand-500 .* text-white" src` must stay empty.
 
+**That 4.5:1 guarantee is only for the resting state.** `AppButton`'s primary variant paints
+`hover:bg-brand-600` and `active:bg-brand-700` — plain ramp stops, not a second derived pair — while the
+foreground stays `--color-on-brand`. For every tenant configured today `onBrand` comes back white and
+both states read fine, but a light brand colour (gold is the worked example) makes the server pick ink
+for `onBrand`, and ink on the repaired `600`/`700` lands around 3.5:1 and 2.5:1 — under 4.5:1, and
+`active:` is the one that bites hardest since a phone tap is what most members will ever see of it. The
+fix belongs on the server, as an `actionFillHover` / `actionFillPressed` beside the existing pair, not a
+browser-side `brightness()` filter — that would also retint every tenant whose hover already works,
+which is the exact two-implementations drift this whole module exists to avoid. Until it lands, treat a
+light brand colour as not yet supported.
+
 **The branding read does not go through `src/api/client.js`.** That client prefixes `/api/v1/me` and
 attaches a bearer token; this endpoint is public and is read before Keycloak has produced one. It builds
 its absolute URL from `VITE_API_BASE_URL` because there is no global axios baseURL in this app.
