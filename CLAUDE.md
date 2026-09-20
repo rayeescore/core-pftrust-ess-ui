@@ -219,7 +219,7 @@ phase 1 (the service) and phase 2 (the staff portal, where a `TRUST_ADMIN` edits
 dependencies, and the design is
 `core-pftrust-service/docs/superpowers/specs/2026-09-18-tenant-configuration-design.md`.
 
-**The whole retint is eleven custom properties on `:root`.** Tailwind 4's `@theme` compiles to real
+**The whole retint is ten custom properties on `:root`.** Tailwind 4's `@theme` compiles to real
 custom properties and every utility reads them through `var()`, so setting
 `--color-brand-500`, `--color-brand-{50,100,600,700}`, `--color-bucket-{1,2,3}`, `--color-action-fill`
 and `--color-on-brand` on `document.documentElement` repaints every screen with no rebuild.

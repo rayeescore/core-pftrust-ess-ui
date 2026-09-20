@@ -92,8 +92,9 @@ export function supportPhone() {
 /**
  * Paints the tenant's ESS palette onto :root.
  *
- * Eleven properties and nothing else. This works because Tailwind 4's @theme compiles to real custom
- * properties on :root and every utility reads them through var() -- `bg-brand-500` is
+ * Ten properties and nothing else -- five ramp stops, three bucket weights, and the action pair.
+ * This works because Tailwind 4's @theme compiles to real custom properties on :root and every
+ * utility reads them through var() -- `bg-brand-500` is
  * `background-color: var(--color-brand-500)` in the built stylesheet -- so an inline property on the
  * document element retints every utility, every arbitrary `style="color: var(--color-brand-700)"` and
  * every component at once, with no rebuild.
@@ -120,7 +121,7 @@ function applyPalette() {
   })
 
   // The three stacked-bar weights, in the order the server sends them: bucket-1 is the brand itself.
-  // .slice(0, 3) is the eleven-properties contract above, not defensive padding: a longer array must
+  // .slice(0, 3) is the ten-properties contract above, not defensive padding: a longer array must
   // never write a --color-bucket-4.
   ;(ess.buckets || []).slice(0, 3).forEach((value, index) => {
     if (value) {
