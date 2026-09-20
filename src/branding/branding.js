@@ -80,15 +80,61 @@ export function supportPhone() {
 }
 
 /**
+ * Paints the tenant's ESS palette onto :root.
+ *
+ * Eleven properties and nothing else. This works because Tailwind 4's @theme compiles to real custom
+ * properties on :root and every utility reads them through var() -- `bg-brand-500` is
+ * `background-color: var(--color-brand-500)` in the built stylesheet -- so an inline property on the
+ * document element retints every utility, every arbitrary `style="color: var(--color-brand-700)"` and
+ * every component at once, with no rebuild.
+ *
+ * NEVER CHANGE @theme TO @theme inline. That bakes the value into each utility and silently ends this.
+ *
+ * Each value is set only if the server sent it: a tenant with a logo and no colour leaves theme.css's
+ * palette exactly where it is, rather than having it cleared to nothing.
+ */
+function applyPalette() {
+  const ess = branding.ess
+
+  if (!ess) {
+    return
+  }
+
+  const root = window.document.documentElement
+  const ramp = ess.brand || {}
+
+  RAMP_STOPS.forEach((stop) => {
+    if (ramp[stop]) {
+      root.style.setProperty(`--color-brand-${stop}`, ramp[stop])
+    }
+  })
+
+  // The three stacked-bar weights, in the order the server sends them: bucket-1 is the brand itself.
+  ;(ess.buckets || []).forEach((value, index) => {
+    if (value) {
+      root.style.setProperty(`--color-bucket-${index + 1}`, value)
+    }
+  })
+
+  if (ess.actionFill) {
+    root.style.setProperty('--color-action-fill', ess.actionFill)
+  }
+
+  if (ess.onBrand) {
+    root.style.setProperty('--color-on-brand', ess.onBrand)
+  }
+}
+
+/**
  * Reads the document.
  *
  * NEVER REJECTS. The portal has to boot when the API is down -- signing in and being told the service is
  * unavailable is a working application; a blank page is not -- so a failure here is a warning and the
  * built-in defaults, not an exception that escapes into the bootstrap.
  *
- * The timeout is the one in this codebase's axios calls, and it is here because main.js awaits this
- * before app.mount(): a refused connection rejects at once, but a hung one (upstream alive, not
- * answering) would otherwise hold the portal on a blank page indefinitely.
+ * The timeout is a deliberate new value for this call, not an existing convention -- it is here because
+ * main.js awaits this before app.mount(): a refused connection rejects at once, but a hung one (upstream
+ * alive, not answering) would otherwise hold the portal on a blank page indefinitely.
  */
 export async function load() {
   try {
@@ -99,5 +145,13 @@ export async function load() {
     Object.assign(branding, response.data || {})
   } catch (error) {
     console.warn('The branding document could not be read; using the built-in defaults.', error)
+  }
+
+  // Its own try/catch, not folded into the one above: NEVER REJECTS has to hold even when the fetch
+  // succeeded and applying it is what threw, and a shared catch would blame the wrong step.
+  try {
+    applyPalette()
+  } catch (error) {
+    console.warn('The tenant palette could not be applied; using the built-in one.', error)
   }
 }

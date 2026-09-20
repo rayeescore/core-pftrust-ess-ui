@@ -22,6 +22,22 @@
   --color-brand-600: oklch(0.488 0.186 25); /* links, hover */
   --color-brand-700: oklch(0.418 0.156 25); /* pressed, on-tint text */
 
+  /* --- the action pair ---------------------------------------------------------------------------
+   * What a filled button is painted with, and what goes on it.
+   *
+   * THESE ARE NOT brand-500 AND white BY COINCIDENCE, AND THEY ARE NOT INTERCHANGEABLE WITH THEM. The
+   * server derives the two together so that the text on the fill clears 4.5:1 (design document, 5.2,
+   * three tiers): white on the brand if it passes, else ink if THAT passes, else the fill is darkened
+   * until white passes. For this trust's red the answer is the brand itself and white, so these two
+   * defaults are exactly today's appearance. For Ericsson blue the fill darkens; for a gold brand the
+   * foreground becomes ink, where `text-white` is about 1.4:1 and unreadable.
+   *
+   * brand-500 is the RAW tenant colour and is never darkened, so bars, accents and chart fills keep it.
+   * Anything with text or an icon on top takes the pair instead.
+   */
+  --color-action-fill: oklch(0.552 0.208 25);
+  --color-on-brand: #ffffff;
+
   /* The three weights the mobile balance legend uses for the three buckets. One hue at three
    * strengths, not three colours: they are parts of one total, and giving them separate hues would
    * say they are separate categories. */

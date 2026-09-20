@@ -112,3 +112,41 @@ describe('the accessors', () => {
     expect(supportPhone()).toBe('+91 22 0000 0000')
   })
 })
+
+describe('the palette', () => {
+  it('paints the ESS ramp, the buckets and the action pair onto the document element', async () => {
+    await boot(CONFIGURED)
+    const style = document.documentElement.style
+
+    expect(style.getPropertyValue('--color-brand-50')).toBe('oklch(0.968 0.019 23.56)')
+    expect(style.getPropertyValue('--color-brand-500')).toBe('oklch(0.562 0.222 23.56)')
+    expect(style.getPropertyValue('--color-brand-700')).toBe('oklch(0.426 0.166 23.56)')
+    expect(style.getPropertyValue('--color-bucket-1')).toBe('oklch(0.562 0.222 23.56)')
+    expect(style.getPropertyValue('--color-bucket-3')).toBe('oklch(0.850 0.069 23.56)')
+    expect(style.getPropertyValue('--color-action-fill')).toBe('oklch(0.562 0.222 23.56)')
+    expect(style.getPropertyValue('--color-on-brand')).toBe('#ffffff')
+  })
+
+  /**
+   * The admin half is hex and this portal's palette is oklch. Reading the wrong half would produce a
+   * portal that looked almost right, which is worse than one that looked wrong.
+   */
+  it('never paints the admin half, whose values are hex', async () => {
+    await boot({ admin: CONFIGURED.admin, version: 'c41e' })
+
+    expect(document.documentElement.getAttribute('style')).toBeNull()
+  })
+
+  it('leaves theme.css alone for a tenant that has configured nothing', async () => {
+    await boot({ version: 'c41e' })
+
+    expect(document.documentElement.getAttribute('style')).toBeNull()
+  })
+
+  /** A present-but-partial `ess`: the tenant uploaded a logo and never picked a colour. */
+  it('sets no colour for a tenant that uploaded a logo and set no colour', async () => {
+    await boot({ ess: { logo: CONFIGURED.ess.logo }, version: 'c41e' })
+
+    expect(document.documentElement.getAttribute('style')).toBeNull()
+  })
+})
