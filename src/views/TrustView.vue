@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 import * as me from '@/api/me'
 import { displayDate } from '@/composables/useFormat'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import { supportEmail, supportPhone } from '@/branding/branding'
 
 /**
  * Who holds the member's money.
@@ -53,6 +54,22 @@ const details = computed(() => {
     },
   ].filter((row) => row.value)
 })
+
+/**
+ * The trust's own contact details when it has published them, and the tenant's PF-department strings
+ * when it has not.
+ *
+ * The trust and trustee tables are seeded by nobody, so a tenant that has filled in tenant_configuration
+ * and not `trust` is a real state -- and it is the state in which this block would otherwise show
+ * nothing while the department's address sits one table away.
+ */
+const contactEmail = computed(() => trust.value?.email || supportEmail())
+const contactPhone = computed(() => trust.value?.contact || supportPhone())
+
+/** A tel: URI cannot carry spaces or punctuation; the displayed string keeps them. */
+const telHref = computed(() =>
+  contactPhone.value ? `tel:${contactPhone.value.replace(/[^+\d]/g, '')}` : null,
+)
 </script>
 
 <template>
@@ -138,18 +155,24 @@ const details = computed(() => {
           >and it goes straight to the part of the department that handles it, with a record you can
           follow. That is faster than an email and it cannot get lost.
         </p>
-        <dl v-if="trust.contactName || trust.email || trust.contact" class="mt-1 flex flex-col gap-2">
+        <dl v-if="trust.contactName || contactEmail || contactPhone" class="mt-1 flex flex-col gap-2">
           <div v-if="trust.contactName" class="flex flex-wrap justify-between gap-3">
             <dt class="text-[13px] text-ink-muted">Contact</dt>
             <dd class="text-[13.5px] font-medium">{{ trust.contactName }}</dd>
           </div>
-          <div v-if="trust.email" class="flex flex-wrap justify-between gap-3">
+          <div v-if="contactEmail" class="flex flex-wrap justify-between gap-3">
             <dt class="text-[13px] text-ink-muted">Email</dt>
-            <dd class="text-[13.5px] font-medium">{{ trust.email }}</dd>
+            <dd class="text-[13.5px] font-medium">
+              <a :href="`mailto:${contactEmail}`" class="text-brand-700 hover:text-brand-600">
+                {{ contactEmail }}
+              </a>
+            </dd>
           </div>
-          <div v-if="trust.contact" class="flex flex-wrap justify-between gap-3">
+          <div v-if="contactPhone" class="flex flex-wrap justify-between gap-3">
             <dt class="text-[13px] text-ink-muted">Telephone</dt>
-            <dd class="font-mono text-[13.5px] font-medium">{{ trust.contact }}</dd>
+            <dd class="font-mono text-[13.5px] font-medium">
+              <a :href="telHref" class="text-brand-700 hover:text-brand-600">{{ contactPhone }}</a>
+            </dd>
           </div>
         </dl>
       </section>

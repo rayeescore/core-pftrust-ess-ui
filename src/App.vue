@@ -1,8 +1,10 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import AppShell from '@/layouts/AppShell.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import * as me from '@/api/me'
+import { logout } from '@/keycloak/keycloak'
+import { supportEmail } from '@/branding/branding'
 
 const identity = ref(null)
 const sessionExpired = ref(false)
@@ -23,6 +25,16 @@ onUnmounted(() => {
   window.removeEventListener('ess:session-expired', onExpired)
   window.removeEventListener('ess:account-not-linked', onNotLinked)
 })
+
+/**
+ * The one screen where a member cannot raise a query instead: Help needs a PF record too, and this
+ * screen exists precisely because there is not one. So the email address is the only way out of it,
+ * and it comes from the tenant rather than from a literal -- an address hard-coded here would send
+ * every tenant's new joiners to one trust's inbox.
+ *
+ * Absent, the button is not rendered: a mailto: with no address is a worse dead end than no button.
+ */
+const email = computed(() => supportEmail())
 </script>
 
 <template>
@@ -38,8 +50,10 @@ onUnmounted(() => {
       your record may not have reached us yet — it usually arrives within a month of your first salary.
     </p>
     <div class="mt-6 flex gap-3">
-      <AppButton variant="primary">Email the PF department</AppButton>
-      <AppButton variant="ghost">Sign out</AppButton>
+      <AppButton v-if="email" variant="primary" :href="`mailto:${email}`">
+        Email the PF department
+      </AppButton>
+      <AppButton variant="ghost" @click="logout()">Sign out</AppButton>
     </div>
   </div>
 

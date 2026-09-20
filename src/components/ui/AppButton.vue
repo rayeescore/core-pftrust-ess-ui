@@ -16,6 +16,13 @@ const props = defineProps({
   size: { type: String, default: 'md', validator: (v) => ['sm', 'md', 'lg'].includes(v) },
   loading: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
+  /**
+   * Renders an <a> instead of a <button>, with the same appearance.
+   *
+   * For a mailto: or tel:, which is a link and should behave like one -- middle-clickable, copyable,
+   * and handed to the mail client by the browser rather than by a handler of ours.
+   */
+  href: { type: String, default: null },
 })
 
 const variants = {
@@ -36,8 +43,10 @@ const inert = computed(() => props.disabled || props.loading)
 </script>
 
 <template>
-  <button
-    :disabled="inert"
+  <component
+    :is="href ? 'a' : 'button'"
+    :href="href || undefined"
+    :disabled="href ? undefined : inert"
     :aria-busy="loading"
     class="inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
     :class="[variants[variant], sizes[size]]"
@@ -47,5 +56,5 @@ const inert = computed(() => props.disabled || props.loading)
       <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
     </svg>
     <slot />
-  </button>
+  </component>
 </template>
