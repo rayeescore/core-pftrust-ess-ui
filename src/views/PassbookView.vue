@@ -90,7 +90,7 @@ function toggle(key) {
         <SegmentedControl v-model="taxView" :options="taxViews" class="hidden sm:flex" />
         <FinancialYearSelect v-model="year" :years="years" class="min-w-0 flex-1 sm:flex-none" />
         <button
-          class="flex min-h-11 shrink-0 items-center gap-[9px] rounded-[10px] bg-brand-500 px-[18px] py-[11px] text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+          class="flex min-h-11 shrink-0 items-center gap-[9px] rounded-[10px] bg-action-fill px-[18px] py-[11px] text-sm font-semibold text-on-brand transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="busy !== null"
           @click="download('monthly', () => me.getMonthlyStatement(year))"
         >
@@ -126,7 +126,7 @@ function toggle(key) {
           <p class="eyebrow" style="color: var(--color-brand-700)">
             Balance · {{ passbook.closingLabel }}
           </p>
-          <p class="tabular text-[19px] font-semibold" style="color: oklch(0.375 0.14 25)">
+          <p class="tabular text-[19px] font-semibold" style="color: var(--color-brand-700)">
             ₹{{ money(passbook.closing) }}
           </p>
         </div>

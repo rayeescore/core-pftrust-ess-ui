@@ -172,7 +172,7 @@ async function saveAttachment(message) {
     <div v-if="tickets" class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[0.85fr_1.4fr]">
       <div class="flex flex-col gap-2.5">
         <button
-          class="flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-brand-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+          class="flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-action-fill px-4 text-sm font-semibold text-on-brand transition-colors hover:bg-brand-600"
           @click="toggleAsk"
         >
           <AppIcon :name="asking ? 'x' : 'plus'" :size="17" />
@@ -238,7 +238,7 @@ async function saveAttachment(message) {
           <button
             type="submit"
             :disabled="busy"
-            class="min-h-11 rounded-[10px] bg-brand-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
+            class="min-h-11 rounded-[10px] bg-action-fill px-4 text-sm font-semibold text-on-brand transition-colors hover:bg-brand-600 disabled:opacity-60"
           >
             {{ busy ? 'Sending…' : 'Send it' }}
           </button>
@@ -357,7 +357,7 @@ async function saveAttachment(message) {
               </button>
               <button
                 :disabled="busy"
-                class="min-h-11 rounded-[10px] bg-brand-500 px-5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
+                class="min-h-11 rounded-[10px] bg-action-fill px-5 text-[13px] font-semibold text-on-brand transition-colors hover:bg-brand-600 disabled:opacity-60"
                 @click="send"
               >
                 {{ busy ? 'Sending…' : 'Reply' }}

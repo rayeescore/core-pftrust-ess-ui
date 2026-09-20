@@ -243,7 +243,7 @@ async function send() {
             <span class="text-[15px] font-semibold">{{ option.title }}</span>
             <span
               v-if="mode === option.key"
-              class="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white"
+              class="flex size-5 shrink-0 items-center justify-center rounded-full bg-action-fill text-on-brand"
             >
               <AppIcon name="check" :size="12" />
             </span>
@@ -400,7 +400,7 @@ async function send() {
             </p>
             <button
               type="button"
-              class="min-h-11 rounded-[10px] bg-brand-500 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+              class="min-h-11 rounded-[10px] bg-action-fill px-6 text-[15px] font-semibold text-on-brand transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!canSend"
               @click="send"
             >

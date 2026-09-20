@@ -45,7 +45,7 @@ defineEmits(['back', 'continue'])
           Back
         </button>
         <button
-          class="min-h-11 rounded-[10px] bg-brand-500 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+          class="min-h-11 rounded-[10px] bg-action-fill px-6 text-[15px] font-semibold text-on-brand transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="!canContinue"
           @click="$emit('continue')"
         >

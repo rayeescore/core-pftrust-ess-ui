@@ -52,7 +52,7 @@ function isRejected(loan) {
 
       <RouterLink
         to="/loans/apply"
-        class="flex min-h-11 shrink-0 items-center gap-[9px] rounded-[10px] bg-brand-500 px-[18px] py-[11px] text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+        class="flex min-h-11 shrink-0 items-center gap-[9px] rounded-[10px] bg-action-fill px-[18px] py-[11px] text-sm font-semibold text-on-brand transition-colors hover:bg-brand-600"
       >
         <AppIcon name="plus" :size="16" />
         Apply for an advance

@@ -72,7 +72,7 @@ const ineligibleCount = (list) =>
               <span class="text-sm leading-[1.35] font-semibold">{{ type.title }}</span>
               <span
                 v-if="draft.purpose?.code === type.code"
-                class="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white"
+                class="flex size-5 shrink-0 items-center justify-center rounded-full bg-action-fill text-on-brand"
               >
                 <AppIcon name="check" :size="12" />
               </span>

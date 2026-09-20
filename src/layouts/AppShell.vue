@@ -54,7 +54,7 @@ const initials = (name) =>
       <div class="flex h-full items-center justify-between px-5 sm:px-7">
         <RouterLink to="/" class="flex min-h-11 items-center gap-[11px]">
           <span
-            class="flex size-[30px] items-center justify-center rounded-lg bg-brand-500 text-white"
+            class="flex size-[30px] items-center justify-center rounded-lg bg-action-fill text-on-brand"
           >
             <AppIcon name="home" :size="17" />
           </span>

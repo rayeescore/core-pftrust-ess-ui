@@ -25,7 +25,7 @@ defineProps({
       </p>
       <p class="flex items-baseline gap-[3px]">
         <span class="text-xl" style="color: var(--color-brand-600)">₹</span>
-        <span class="tabular font-display text-[38px] leading-[1.1]" style="color: oklch(0.375 0.14 25)">
+        <span class="tabular font-display text-[38px] leading-[1.1]" style="color: var(--color-brand-700)">
           {{ money(entitlement.amount) }}
         </span>
       </p>

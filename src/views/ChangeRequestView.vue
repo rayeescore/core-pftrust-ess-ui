@@ -349,7 +349,7 @@ async function send() {
               </label>
               <button
                 type="button"
-                class="min-h-11 rounded-[10px] bg-brand-500 px-4 text-[13px] font-semibold text-white hover:bg-brand-600"
+                class="min-h-11 rounded-[10px] bg-action-fill px-4 text-[13px] font-semibold text-on-brand hover:bg-brand-600"
                 @click="addNominee"
               >
                 Add
@@ -456,7 +456,7 @@ async function send() {
             <button
               type="button"
               :disabled="!canSend"
-              class="min-h-11 rounded-[10px] bg-brand-500 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+              class="min-h-11 rounded-[10px] bg-action-fill px-6 text-[15px] font-semibold text-on-brand transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
               @click="send"
             >
               {{ busy ? 'Sending…' : 'Send the request' }}

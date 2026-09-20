@@ -19,7 +19,7 @@ const props = defineProps({
 })
 
 const variants = {
-  primary: 'bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700 focus-visible:outline-brand-600',
+  primary: 'bg-action-fill text-on-brand hover:bg-brand-600 active:bg-brand-700 focus-visible:outline-brand-600',
   secondary:
     'bg-surface text-ink ring-1 ring-inset ring-border-strong hover:bg-surface-deep focus-visible:outline-brand-600',
   ghost: 'text-ink-muted hover:bg-surface-deep hover:text-ink focus-visible:outline-brand-600',

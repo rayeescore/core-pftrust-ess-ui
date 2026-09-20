@@ -22,7 +22,7 @@ const steps = ['Purpose', 'Amount', 'Details', 'Documents', 'Review']
         class="flex items-center gap-2 rounded-full py-[7px]"
         :class="
           index + 1 === current
-            ? 'bg-brand-500 pr-[15px] pl-[9px] text-white'
+            ? 'bg-action-fill pr-[15px] pl-[9px] text-on-brand'
             : 'px-[9px] text-ink-faint'
         "
       >

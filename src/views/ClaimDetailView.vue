@@ -91,7 +91,7 @@ async function save(documentId) {
       <aside class="flex flex-col gap-5">
         <section v-if="claim.amount" class="overflow-hidden rounded-card border border-brand-100 bg-brand-50 px-5 py-5">
           <p class="text-[13px] font-medium" style="color: var(--color-brand-700)">{{ claim.amount.label }}</p>
-          <p class="tabular mt-1.5 font-display text-[32px] leading-[1.1]" style="color: oklch(0.375 0.14 25)">
+          <p class="tabular mt-1.5 font-display text-[32px] leading-[1.1]" style="color: var(--color-brand-700)">
             ₹{{ money(claim.amount.value) }}
           </p>
           <p class="mt-1.5 text-xs leading-[1.5]" style="color: var(--color-brand-700)">
