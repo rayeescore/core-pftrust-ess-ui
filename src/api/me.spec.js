@@ -40,6 +40,35 @@ describe('getLoans', () => {
   })
 })
 
+describe('withdrawLoan', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  /**
+   * The advance is named by its own entityId and nobody is named at all — the caller comes from the
+   * JWT, and `@memberOwnership.ownsLoan` answers 403 for somebody else's id rather than 404.
+   */
+  it("takes back the caller's own advance and unwraps the updated record", async () => {
+    client.put.mockResolvedValue({
+      data: { data: { id: 'loan-1', status: { label: 'Cancelled' }, withdrawable: false } },
+    })
+
+    const updated = await me.withdrawLoan('loan-1')
+
+    expect(client.put).toHaveBeenCalledWith('/loans/loan-1/withdraw')
+    expect(updated).toEqual({ id: 'loan-1', status: { label: 'Cancelled' }, withdrawable: false })
+  })
+
+  it('names nobody in the request', async () => {
+    client.put.mockResolvedValue({ data: { data: {} } })
+
+    await me.withdrawLoan('loan-1')
+
+    const [path, body] = client.put.mock.calls[0]
+    expect(path).toBe('/loans/loan-1/withdraw')
+    expect(JSON.stringify(body ?? {})).not.toMatch(/employeeId|pfNumber|pernNumber/)
+  })
+})
+
 describe('createLoan', () => {
   beforeEach(() => vi.clearAllMocks())
 

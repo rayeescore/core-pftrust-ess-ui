@@ -427,6 +427,9 @@ export const loan = {
   // from PENDING_FINAL_APPROVAL. Without it the progress bar contradicted the chip beside it.
   completedSteps: 2,
   receipt: false,
+  // The API decides this, not the status label: PENDING and PENDING_FINAL_APPROVAL both accept a
+  // withdrawal, everything from payment onwards refuses it with a 409.
+  withdrawable: true,
   steps: [
     { label: 'Submitted', when: '02 Aug 2026', state: 'done' },
     { label: 'Checked and approved', when: '18 Aug 2026', state: 'done' },
@@ -442,7 +445,13 @@ export const loan = {
     { label: 'Approved amount', value: '2780690.00', numeric: true, strong: true },
     { label: 'Paid into', value: 'HDFC ••••4471' },
   ],
-  documents: ['Sale Agreement', 'Stamp Duty / Registration Receipt', 'Builders Receipt'],
+  // Each carries the uploaded_document id GET /me/documents/{id} serves it by -- the name alone is
+  // not enough to fetch anything, which is why the View button beside it did nothing.
+  documents: [
+    { id: '1d7a4c90-2f6b-4a11-8c3e-77b5d0e94a18', name: 'Sale Agreement' },
+    { id: '2e8b5da1-3a7c-4b22-9d4f-88c6e1fa5b29', name: 'Stamp Duty / Registration Receipt' },
+    { id: '3f9c6eb2-4b8d-4c33-ae50-99d7f20b6c3a', name: 'Builders Receipt' },
+  ],
   history: [
     { label: 'Sent for second approval', at: '18 Aug 2026, 16:20' },
     { label: 'Approved by the PF department', at: '18 Aug 2026, 16:20' },

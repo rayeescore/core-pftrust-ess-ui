@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import * as me from '@/api/me'
-import { useDownload } from '@/composables/useDownload'
+import { downloadFailure, saveFile, useDownload } from '@/composables/useDownload'
 import AppButton from '@/components/ui/AppButton.vue'
 import { displayDate, money } from '@/composables/useFormat'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -25,9 +25,57 @@ const route = useRoute()
 const loan = ref(null)
 const { busy, failure, download } = useDownload()
 
+const withdrawing = ref(false)
+const armed = ref(false)
+const withdrawalFailure = ref('')
+const documentFailure = ref('')
+
 onMounted(async () => {
   loan.value = await me.getLoan(route.params.id)
 })
+
+/**
+ * One of the documents the member attached.
+ *
+ * Fetched through the authenticated client and saved, never a plain <a href>: the API is bearer-only,
+ * so a link would land on a 401 in a blank tab. `ClaimDetailView` does the same for the same reason.
+ */
+async function saveDocument(document) {
+  documentFailure.value = ''
+  try {
+    const { blob, filename } = await me.getDocumentFile(document.id)
+    saveFile(blob, filename)
+  } catch (error) {
+    documentFailure.value = await downloadFailure(error)
+  }
+}
+
+/**
+ * "Never mind."
+ *
+ * Two taps, unlike the correction withdrawal, which goes on the first. A correction is a sentence and
+ * costs nothing to raise again; an advance application is five steps and re-uploaded documents, and it
+ * is beside a Download button on a phone-width column.
+ *
+ * The record is replaced with what the API answers rather than patched locally: the status, the
+ * tracker and `withdrawable` itself all change together, and re-reading them is what keeps this button
+ * disappearing at the same moment the chip changes.
+ */
+async function withdraw() {
+  withdrawing.value = true
+  withdrawalFailure.value = ''
+  try {
+    loan.value = await me.withdrawLoan(loan.value.id)
+    armed.value = false
+  } catch (failed) {
+    // A 409 means an approver moved it on while this page was open. The API writes that sentence for
+    // the member to read, so it is shown as it arrives.
+    withdrawalFailure.value =
+      failed.response?.data?.message ?? 'That did not go through. Try again in a moment.'
+  } finally {
+    withdrawing.value = false
+  }
+}
 </script>
 
 <template>
@@ -81,21 +129,31 @@ onMounted(async () => {
           </dl>
         </section>
 
-        <section class="rounded-card border border-border bg-surface px-6 py-[22px]">
+        <section
+          v-if="loan.documents?.length"
+          class="rounded-card border border-border bg-surface px-6 py-[22px]"
+        >
           <h2 class="eyebrow mb-3">Documents you sent</h2>
           <ul class="flex flex-col">
             <li
               v-for="doc in loan.documents"
-              :key="doc"
+              :key="doc.id"
               class="flex items-center justify-between gap-4 border-b border-border-subtle py-2.5 text-[13.5px] last:border-0"
             >
               <span class="flex items-center gap-2.5">
                 <AppIcon name="file" :size="15" class="text-ink-faint" />
-                {{ doc }}
+                {{ doc.name }}
               </span>
-              <button class="min-h-11 text-[12.5px] font-medium text-brand-700 hover:text-brand-600">View</button>
+              <button
+                type="button"
+                class="min-h-11 text-[12.5px] font-medium text-brand-700 hover:text-brand-600"
+                @click="saveDocument(doc)"
+              >
+                Download
+              </button>
             </li>
           </ul>
+          <p v-if="documentFailure" class="mt-2 text-[12.5px] text-danger-700">{{ documentFailure }}</p>
         </section>
       </div>
 
@@ -129,15 +187,49 @@ onMounted(async () => {
           </ol>
         </section>
 
-        <!-- The blocking rule, said before a member discovers it by being refused. -->
-        <section class="rounded-card border border-border bg-surface-deep px-5 py-5">
+        <!--
+          The blocking rule, said before a member discovers it by being refused — and the way out of
+          it. Both are shown only while the API would actually accept a withdrawal: `withdrawable` is
+          the server's answer, not a status label read twice.
+        -->
+        <section v-if="loan.withdrawable" class="rounded-card border border-border bg-surface-deep px-5 py-5">
           <h2 class="eyebrow">While this is open</h2>
           <p class="mt-2 text-[13px] leading-[1.55] text-ink-soft">
             You cannot start another advance, for any purpose, until this one is settled or withdrawn.
           </p>
-          <button class="mt-3 min-h-11 text-[13px] font-semibold text-danger-700 hover:text-danger-500">
+
+          <button
+            v-if="!armed"
+            type="button"
+            class="mt-3 min-h-11 text-[13px] font-semibold text-danger-700 hover:text-danger-500"
+            @click="armed = true"
+          >
             Withdraw this application
           </button>
+
+          <div v-else class="mt-3">
+            <p class="text-[13px] leading-[1.55] text-ink-soft">
+              This cannot be undone. To apply again you would start a new application and send your
+              documents once more.
+            </p>
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+              <AppButton variant="danger" size="md" :loading="withdrawing" @click="withdraw">
+                {{ withdrawing ? 'Withdrawing…' : 'Yes, withdraw it' }}
+              </AppButton>
+              <button
+                type="button"
+                :disabled="withdrawing"
+                class="min-h-11 text-[12.5px] font-medium text-ink-muted hover:text-ink disabled:opacity-60"
+                @click="armed = false"
+              >
+                Keep it
+              </button>
+            </div>
+          </div>
+
+          <p v-if="withdrawalFailure" class="mt-2.5 text-[12.5px] leading-[1.5] text-danger-700">
+            {{ withdrawalFailure }}
+          </p>
         </section>
       </aside>
     </div>

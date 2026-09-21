@@ -44,6 +44,7 @@ const LIVE = new Set([
   'tickets',
   'trust',
   'createLoan',
+  'withdrawLoan',
   'uploadDocument',
   'ticket',
   'ticketCategories',
@@ -200,6 +201,31 @@ export async function getLoan(id) {
     return fixtures.loan
   }
   return (await client.get(`/loans/${id}`)).data.data
+}
+
+/**
+ * Take an advance application back.
+ *
+ * Answers the updated record, which is what the caller shows — the status, the tracker and
+ * `withdrawable` itself all change together, and re-reading them from the response is what keeps the
+ * screen in step with the server instead of patching a label locally. Same shape as
+ * `withdrawChangeRequest`, for the same reason.
+ *
+ * A 409 means the application moved past the point of no return while the member was looking at it —
+ * an approver sent it for payment. The message is written by the API for the member to read, so it is
+ * shown as it arrives rather than replaced with one of ours.
+ */
+export async function withdrawLoan(id) {
+  if (!isLive('withdrawLoan')) {
+    await delay(500)
+    return {
+      ...fixtures.loan,
+      status: { label: 'Cancelled', tone: 'muted' },
+      completedSteps: 0,
+      withdrawable: false,
+    }
+  }
+  return (await client.put(`/loans/${id}/withdraw`)).data.data
 }
 
 /** Phase 3. Masked server-side: the member record never carries a full PAN or Aadhaar. */
