@@ -30,6 +30,15 @@ const router = createRouter({
 
     { path: '/profile', name: 'profile', component: () => import('@/views/ProfileView.vue') },
     { path: '/profile/corrections', name: 'change-request', component: () => import('@/views/ChangeRequestView.vue') },
+
+    // The history is a second path rather than this one's list, because `/profile/corrections` is
+    // quoted server-side: MemberDashboardController builds the nominee and bank alerts with that URL,
+    // so it has to keep meaning "the form" or those alerts land on a list of what was already sent.
+    {
+      path: '/profile/corrections/history',
+      name: 'change-request-history',
+      component: () => import('@/views/ChangeRequestHistoryView.vue'),
+    },
     { path: '/transfer-in', name: 'transfer-in', component: () => import('@/views/TransferInView.vue') },
     { path: '/transfer-in/:id', name: 'transfer-in-detail', component: () => import('@/views/TransferInDetailView.vue') },
     { path: '/claims', name: 'claims', component: () => import('@/views/ClaimView.vue') },

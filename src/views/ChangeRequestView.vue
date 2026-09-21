@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import * as me from '@/api/me'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import ChangeDiffRow from '@/components/product/ChangeDiffRow.vue'
@@ -242,12 +242,21 @@ async function send() {
 
 <template>
   <div class="flex flex-col gap-5">
-    <header class="flex flex-col gap-1.5">
-      <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Ask for a correction</h1>
-      <p class="max-w-[72ch] text-sm leading-relaxed text-ink-muted">
-        Your details come from payroll and cannot be edited here. Tell us what is wrong and the PF
-        department will check it and put it right.
-      </p>
+    <header class="flex flex-wrap items-start justify-between gap-x-7 gap-y-2">
+      <div class="flex flex-col gap-1.5">
+        <h1 class="font-display text-[25px] leading-[1.15] sm:text-[30px]">Ask for a correction</h1>
+        <p class="max-w-[72ch] text-sm leading-relaxed text-ink-muted">
+          Your details come from payroll and cannot be edited here. Tell us what is wrong and the PF
+          department will check it and put it right.
+        </p>
+      </div>
+
+      <RouterLink
+        to="/profile/corrections/history"
+        class="inline-flex min-h-11 shrink-0 items-center text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
+      >
+        What you have already asked for
+      </RouterLink>
     </header>
 
     <div v-if="profile" class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.4fr_1fr]">

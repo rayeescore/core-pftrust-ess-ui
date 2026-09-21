@@ -2,7 +2,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import * as me from '@/api/me'
+import { partition, summary } from '@/composables/useChangeRequests'
 import { downloadFailure, saveFile } from '@/composables/useDownload'
+import { displayDate } from '@/composables/useFormat'
 import AppBanner from '@/components/ui/AppBanner.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusChip from '@/components/ui/StatusChip.vue'
@@ -35,15 +37,17 @@ onMounted(async () => {
 })
 
 /** `pending` comes from the API -- the label is written for people and is not something to branch on. */
-const pending = computed(() => requests.value.filter((request) => request.pending))
-const decided = computed(() => requests.value.filter((request) => !request.pending).slice(0, 3))
+const pending = computed(() => partition(requests.value).pending)
 
-/** "Mobile number, Nominee · Rohan Deshmukh" -- the labels are the server's, so two screens agree. */
-function summary(request) {
-  return request.items
-    .map((item) => (item.subject ? `${item.label} · ${item.subject}` : item.label))
-    .join(', ')
-}
+/**
+ * Three, and no more.
+ *
+ * This card is a glance on a page about something else; the whole history, with every before-and-after
+ * pair and the proof, is one click away at /profile/corrections/history. It was capped at three before
+ * that screen existed too, which meant a member's fourth correction became unreachable the day they
+ * raised a fifth.
+ */
+const decided = computed(() => partition(requests.value).decided.slice(0, 3))
 
 function correct() {
   router.push('/profile/corrections')
@@ -96,7 +100,7 @@ async function withdraw(request) {
       v-for="request in pending"
       :key="request.id"
       tone="info"
-      :title="`A correction is under review — asked ${request.raisedOn}`"
+      :title="`A correction is under review — asked ${displayDate(request.raisedOn)}`"
     >
       {{ summary(request) }}
       <template #action>
@@ -280,9 +284,24 @@ async function withdraw(request) {
         </section>
 
         <!-- A refusal's reason is why one is stored. It sits here, where the member looks. -->
-        <section v-if="decided.length" class="rounded-card border border-border bg-surface px-6 py-5">
-          <h2 class="eyebrow mb-3">Corrections you asked for</h2>
-          <div class="flex flex-col gap-3">
+        <section v-if="requests.length" class="rounded-card border border-border bg-surface px-6 py-5">
+          <div class="mb-3 flex items-baseline justify-between gap-3">
+            <h2 class="eyebrow">Corrections you asked for</h2>
+            <RouterLink
+              to="/profile/corrections/history"
+              class="-my-3 inline-flex min-h-11 items-center text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
+            >
+              See all
+            </RouterLink>
+          </div>
+
+          <!-- Only the open ones so far. They are already banners at the top of this page, so the card
+               says why it is empty rather than repeating them. -->
+          <p v-if="!decided.length" class="text-[13px] text-ink-faint italic">
+            Nothing has been decided yet. What you have asked for is at the top of this page.
+          </p>
+
+          <div v-else class="flex flex-col gap-3">
             <div
               v-for="request in decided"
               :key="request.id"
@@ -293,7 +312,8 @@ async function withdraw(request) {
                 <StatusChip :label="request.status.label" :tone="request.status.tone" />
               </div>
               <p class="tabular text-[11.5px] text-ink-faint">
-                Asked {{ request.raisedOn }}<span v-if="request.decidedOn"> · decided {{ request.decidedOn }}</span>
+                Asked {{ displayDate(request.raisedOn) }}
+                <span v-if="request.decidedOn"> · decided {{ displayDate(request.decidedOn) }}</span>
               </p>
               <p v-if="request.decisionReason" class="text-[12.5px] leading-[1.5] text-ink-muted">
                 {{ request.decisionReason }}

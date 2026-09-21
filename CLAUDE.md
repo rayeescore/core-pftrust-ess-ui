@@ -88,9 +88,19 @@ The design brief with the backend constraints behind it is `docs/ESS_PORTAL_DESI
 ## What exists and what does not
 
 **Built:** every screen on the canvas — dashboard, passbook, the five-step advance flow and its
-tracker, profile, corrections, transfer-in and its tracker, claims and the claim tracker, help and the
-trust page — plus the shell, Keycloak auth with silent refresh, the API client, the formatting rules and
-the component set behind all of it.
+tracker, profile, corrections and the correction history, transfer-in and its tracker, claims and the
+claim tracker, help and the trust page — plus the shell, Keycloak auth with silent refresh, the API
+client, the formatting rules and the component set behind all of it.
+
+**`/profile/corrections` is the form and `/profile/corrections/history` is the list, and that split is
+not arbitrary.** `MemberDashboardController` builds the nominee and bank alerts server-side with the
+literal string `/profile/corrections`, so that path has to keep meaning "the form" — a member who clicks
+"your nomination is incomplete" wants the form, not a list of what they have already sent. The history
+row expands in place rather than linking to a detail route: `GET /me/change-requests` already returns
+every before-and-after pair, the decision reason and `hasAttachment`, so `getChangeRequest(id)` in
+`src/api/me.js` still has no caller, deliberately. The wording both screens share — the summary join and
+the two phrases for an absent value — is `src/composables/useChangeRequests.js`, because the profile card
+and the history list show the same request and did so through two copies of the same join before it.
 
 **The member API behind it is built too** (43 handlers in `core-pftrust-service`, as of 2026-09-16). Every
 function in `src/api/me.js` is in the `LIVE` set; `VITE_USE_FIXTURES=partial` is now only a way to pull a
@@ -174,8 +184,10 @@ advance declaration's 16px checkbox is fine and a bare 20px `<button>` is not.
 
 ## Mobile, and the four rules that keep it working
 
-Audited and fixed on 2026-09-18 across all eighteen routes at 320 / 360 / 390 / 430 / 768 / 1280, in
-both the loading and the loaded state. Four things had gone wrong, and each is a rule rather than a
+Audited and fixed on 2026-09-18 across the eighteen routes that existed then, at 320 / 360 / 390 / 430
+/ 768 / 1280, in both the loading and the loaded state. `/profile/corrections/history` (2026-09-21) was
+built to these rules but has **not** been through that script — it is the one route the measured audit
+does not cover. Four things had gone wrong, and each is a rule rather than a
 one-off fix — a headless CDP script that walks every route at every width, measures
 `documentElement.scrollWidth` against `clientWidth`, and reports control font sizes and target heights
 is the cheap way to re-check after any layout change.
