@@ -12,6 +12,8 @@
 // Matches GET /api/v1/me exactly -- that handler now exists, so this fixture is a copy of a real
 // response rather than a guess at one. statusLabel and statusTone arrive already translated: the raw
 // ContributionStatus symbol never reaches a browser, so every client says the same words.
+import { COMPLETION_DATE, PROPERTY_COSTS, REPAYMENT_BANK } from '@/composables/useLoanFields'
+
 export const identity = {
   name: 'Sunita Deshmukh',
   pfNumber: '104782',
@@ -224,10 +226,15 @@ export const passbook = {
 export const contributedYears = [2027, 2026, 2025, 2024]
 
 /**
- * The twelve advance purposes, grouped as the design groups them: by what the money is for, not by the
+ * The advance purposes, grouped as the design groups them: by what the money is for, not by the
  * loan_group letter the database uses. A member does not think in groups A to E.
  *
  * Two are closed to Sunita, and both stay on the list with the reason. Hiding them generates queries.
+ *
+ * `asks` is what the form for each purpose has to put, and the fixture carries it because fixture mode
+ * is where the flow is worked on: a fixture without it would show every purpose the same form, which
+ * is the bug this field was added to fix. Note that 01 and 02 differ, that 13 asks for no property at
+ * all, and that 06 -- which the database files under the housing group -- asks for nothing.
  */
 export const loanTypes = [
   {
@@ -235,6 +242,7 @@ export const loanTypes = [
     types: [
       {
         code: '01',
+        asks: [PROPERTY_COSTS],
         title: 'Purchase of Residential House/Flat',
         basis: 'Up to 36 months of PF base salary, against your whole balance.',
         usage: 'Used 0 of 100 · needs 5 years’ membership',
@@ -242,6 +250,7 @@ export const loanTypes = [
       },
       {
         code: '11',
+        asks: [PROPERTY_COSTS],
         title: 'Construction of Residential House/Flat',
         reason: 'You have already taken this advance once, and it is allowed once only.',
         usage: 'Used 1 of 1 · not available',
@@ -249,6 +258,7 @@ export const loanTypes = [
       },
       {
         code: '10',
+        asks: [PROPERTY_COSTS],
         title: 'Purchase of Residential House/Flat (Second Sale)',
         basis: 'Up to 36 months of PF base salary, against your whole balance.',
         usage: 'Used 0 of 100',
@@ -256,6 +266,7 @@ export const loanTypes = [
       },
       {
         code: '12',
+        asks: [PROPERTY_COSTS],
         title: 'Purchase of Site/Plot',
         basis: 'Up to 24 months of PF base salary, against your whole balance.',
         usage: 'Used 0 of 100',
@@ -263,6 +274,7 @@ export const loanTypes = [
       },
       {
         code: '13',
+        asks: [REPAYMENT_BANK],
         title: 'Repayment of Housing Loan',
         basis: 'Up to 36 months of PF base salary, paid to your lender.',
         usage: 'Used 0 of 1 · needs 10 years’ membership',
@@ -270,9 +282,20 @@ export const loanTypes = [
       },
       {
         code: '02',
+        asks: [COMPLETION_DATE],
         title: 'Alteration / Improvement / Additions',
         basis: 'Up to 12 months of PF base salary, from your own and VPF contributions.',
         usage: 'Used 0 of 5',
+        eligible: true,
+      },
+      // Group A in the database, and nothing to do with a house. V0_0_111 added it, and a portal that
+      // read the group asked whoever chose it to itemise a flat they were not buying.
+      {
+        code: '06',
+        asks: [],
+        title: 'Pension on Heigher Wages',
+        basis: 'Up to 75% of your whole balance.',
+        usage: 'Used 0 of 100',
         eligible: true,
       },
     ],
@@ -282,6 +305,7 @@ export const loanTypes = [
     types: [
       {
         code: '03',
+        asks: [],
         title: 'Marriage',
         basis: 'Half of your own and VPF contributions.',
         usage: 'Used 0 of 3 · needs 7 years’ membership',
@@ -289,6 +313,7 @@ export const loanTypes = [
       },
       {
         code: '08',
+        asks: [],
         title: 'Education (Post-Matriculation) of Children',
         basis: 'All of your own and VPF contributions.',
         usage: 'Used 0 of 3 · needs 7 years’ membership',
@@ -301,6 +326,7 @@ export const loanTypes = [
     types: [
       {
         code: '04',
+        asks: [],
         title: 'Hospitalisation, major operation or sickness',
         basis: 'Half of your own and VPF contributions. No minimum membership.',
         usage: 'Used 1 of 5',
@@ -313,6 +339,7 @@ export const loanTypes = [
     types: [
       {
         code: '99',
+        asks: [],
         title: 'Pre-retirement withdrawal',
         reason: 'Available in the year before you retire. You are not there yet.',
         usage: 'Not available',
@@ -320,6 +347,7 @@ export const loanTypes = [
       },
       {
         code: '98',
+        asks: [],
         title: 'Epidemic or pandemic',
         basis: 'Three months of PF base salary, up to 75% of your balance.',
         usage: 'Used 0 of 3',

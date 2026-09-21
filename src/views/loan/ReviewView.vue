@@ -3,7 +3,13 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as me from '@/api/me'
 import { useLoanDraft, resetLoanDraft } from '@/composables/useLoanDraft'
-import { money } from '@/composables/useFormat'
+import {
+  COMPLETION_DATE,
+  PROPERTY_COSTS,
+  REPAYMENT_BANK,
+  asks,
+} from '@/composables/useLoanFields'
+import { displayIsoDate, money } from '@/composables/useFormat'
 import LoanFlowLayout from '@/layouts/LoanFlowLayout.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 
@@ -33,6 +39,58 @@ onMounted(async () => {
 })
 
 const attached = computed(() => Object.keys(draft.value.documents ?? {}))
+
+/**
+ * The sections, including the ones that exist only for some purposes.
+ *
+ * The property and the lender used to be typed on step 3 and then never shown again -- a member
+ * repaying a housing loan entered an account number for the money to go to and submitted without ever
+ * seeing it back. On a screen whose whole job is "check it over", the fields most worth checking were
+ * the ones missing from it.
+ */
+const sections = computed(() => [
+  { label: 'Purpose', to: '/loans/apply' },
+  { label: 'Amount', to: '/loans/apply/amount' },
+  ...(asks(draft.value.purpose, PROPERTY_COSTS) || asks(draft.value.purpose, COMPLETION_DATE)
+    ? [{ label: 'The property', to: '/loans/apply/details' }]
+    : []),
+  ...(asks(draft.value.purpose, REPAYMENT_BANK)
+    ? [{ label: 'Repaying', to: '/loans/apply/details' }]
+    : []),
+  { label: 'Paid into', to: '/loans/apply/details' },
+  { label: 'Documents', to: '/loans/apply/documents' },
+])
+
+/** Only the rows this purpose actually asked for, so a blank one is a blank the member left. */
+const propertyRows = computed(() => {
+  const property = draft.value.property ?? {}
+
+  if (asks(draft.value.purpose, COMPLETION_DATE)) {
+    return [{ label: 'House finished', value: displayIsoDate(property.dateOfCompletionOfHouse) }]
+  }
+
+  return [
+    ['Agreement value', property.agreementValue],
+    ['Stamp duty', property.stampDuty],
+    ['Registration', property.registration],
+    ['Insurance', property.insurance],
+    ['Anything else', property.others],
+  ]
+    .filter(([, amount]) => amount !== '' && amount != null)
+    .map(([label, amount]) => ({ label, value: `₹${money(amount)}` }))
+})
+
+const repaymentRows = computed(() => {
+  const lender = draft.value.repaymentBank ?? {}
+  return [
+    { label: 'Lender', value: lender.financialInstituteName },
+    { label: 'Bank', value: lender.bank },
+    { label: 'Branch', value: lender.branch },
+    { label: 'Account number', value: lender.accountNumber, mono: true },
+    { label: 'IFSC', value: lender.ifscCode, mono: true },
+    { label: 'MICR', value: lender.micrCode, mono: true },
+  ].filter((row) => row.value)
+})
 
 const whatHappensNext = [
   {
@@ -107,16 +165,7 @@ async function submit() {
     <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.4fr_1fr]">
       <div class="flex flex-col gap-5">
         <section class="flex flex-col gap-5 rounded-card border border-border bg-surface px-6 py-[22px]">
-          <div
-            v-for="section in [
-              { label: 'Purpose', to: '/loans/apply' },
-              { label: 'Amount', to: '/loans/apply/amount' },
-              { label: 'Paid into', to: '/loans/apply/details' },
-              { label: 'Documents', to: '/loans/apply/documents' },
-            ]"
-            :key="section.label"
-            class="flex flex-col gap-2"
-          >
+          <div v-for="section in sections" :key="section.label" class="flex flex-col gap-2">
             <div class="flex items-baseline justify-between gap-3">
               <h2 class="eyebrow">{{ section.label }}</h2>
               <button
@@ -144,6 +193,34 @@ async function submit() {
                 <dt>You will receive</dt>
                 <dd class="tabular">₹{{ money(draft.entitlement) }}</dd>
               </div>
+            </dl>
+
+            <dl
+              v-else-if="section.label === 'The property'"
+              class="flex flex-col gap-1.5 text-[13.5px]"
+            >
+              <div v-for="row in propertyRows" :key="row.label" class="flex justify-between gap-4">
+                <dt class="text-ink-muted">{{ row.label }}</dt>
+                <dd class="tabular">{{ row.value }}</dd>
+              </div>
+              <p v-if="!propertyRows.length" class="text-ink-muted">
+                Nothing entered. The PF department will ask for it.
+              </p>
+            </dl>
+
+            <!--
+              The one block on this screen that is not about the member's own money: on code 13 the
+              advance is paid to the lender, so this account is where it goes. It is the single most
+              important thing here to read back before submitting.
+            -->
+            <dl v-else-if="section.label === 'Repaying'" class="flex flex-col gap-1.5 text-[13.5px]">
+              <div v-for="row in repaymentRows" :key="row.label" class="flex justify-between gap-4">
+                <dt class="text-ink-muted">{{ row.label }}</dt>
+                <dd :class="row.mono ? 'font-mono text-xs' : ''">{{ row.value }}</dd>
+              </div>
+              <p v-if="!repaymentRows.length" class="text-ink-muted">
+                Nothing entered. The PF department will ask who to pay.
+              </p>
             </dl>
 
             <p v-else-if="section.label === 'Paid into'" class="text-[13.5px]">

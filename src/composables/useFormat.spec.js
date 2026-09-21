@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { displayDate, financialYear, maskTail, money } from '@/composables/useFormat'
+import {
+  displayDate,
+  displayIsoDate,
+  financialYear,
+  maskTail,
+  money,
+} from '@/composables/useFormat'
 
 /**
  * The formatting rules, which are the ones a member sees get wrong.
@@ -74,5 +80,33 @@ describe('maskTail', () => {
    */
   it('says so when the trust holds nothing', () => {
     expect(maskTail(null)).toBe('Not on record')
+  })
+})
+
+/**
+ * The other direction. `displayDate` reads what the API sends (dd-MM-yyyy); this reads what an
+ * `<input type="date">` holds (yyyy-MM-dd), which is the only place in the portal a member types a
+ * date. The two formats are indistinguishable by shape -- "04-12-2019" and "2019-04-12" both split
+ * into three numbers -- so one function guessing between them would get a member's completion date
+ * wrong in a way nobody would spot on screen.
+ */
+describe('displayIsoDate', () => {
+  it('reads the form value an input type=date produces', () => {
+    expect(displayIsoDate('2019-04-12')).toBe('12 Apr 2019')
+  })
+
+  // The bug this exists to prevent: displayDate on the same string reads 2019 as the day.
+  it('does not read the year as the day', () => {
+    expect(displayIsoDate('2019-04-12')).not.toContain('2019 Apr')
+  })
+
+  it('renders an unfilled date as an em dash', () => {
+    expect(displayIsoDate('')).toBe('—')
+    expect(displayIsoDate(null)).toBe('—')
+    expect(displayIsoDate(undefined)).toBe('—')
+  })
+
+  it('gives back anything it cannot read rather than inventing a date', () => {
+    expect(displayIsoDate('not a date')).toBe('not a date')
   })
 })

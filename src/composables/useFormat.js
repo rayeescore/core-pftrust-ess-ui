@@ -67,6 +67,31 @@ export function displayDate(value) {
 }
 
 /**
+ * A date the member typed, for display: DD MMM YYYY.
+ *
+ * `<input type="date">` holds yyyy-MM-dd, which is the reverse of what the API sends -- and the two are
+ * indistinguishable by shape, since "04-12-2019" and "2019-04-12" both split into three numbers. Hence
+ * a second function rather than a `displayDate` that guesses: a guess that goes wrong shows a member a
+ * plausible date that is not the one they entered, which is the kind of mistake nobody catches on
+ * screen. The only place this is needed is the completion date on an alteration advance.
+ */
+export function displayIsoDate(value) {
+  if (!value) {
+    return '—'
+  }
+
+  const [year, month, day] = String(value).split('-')
+
+  if (!day || !month || !year || year.length !== 4) {
+    return String(value)
+  }
+
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+  return `${day} ${months[Number(month) - 1] ?? month} ${year}`
+}
+
+/**
  * A financial year, always as a range and never as a bare number.
  *
  * A financial year is named by the calendar year it ENDS in, so April 2025 belongs to FY 2026. Showing

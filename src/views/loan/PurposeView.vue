@@ -22,16 +22,17 @@ onMounted(async () => {
   groups.value = await me.getLoanTypes()
 })
 
-function choose(group, type) {
+// The whole purpose is kept, not its code: it carries `asks`, which is what the details step draws its
+// form from. The group name used to be carried alongside it and used for exactly that, which is how a
+// pension withdrawal came to be shown a property form -- see useLoanFields.
+function choose(type) {
   if (!type.eligible) return
   draft.value.purpose = type
-  // The group comes with the purpose because the details step needs it: whether a property block is
-  // asked is the trust's grouping, not a list of codes this screen would have to keep in step.
-  draft.value.group = group.name
 }
 
-const ineligibleCount = (list) =>
-  list.flatMap((group) => group.types).filter((type) => !type.eligible).length
+const allTypes = (list) => list.flatMap((group) => group.types)
+
+const ineligibleCount = (list) => allTypes(list).filter((type) => !type.eligible).length
 </script>
 
 <template>
@@ -41,7 +42,7 @@ const ineligibleCount = (list) =>
     intro="Each purpose has its own rules — how long you must have been a member, how many times you may draw, and how much of your balance you can reach. We have already checked yours."
     :note="
       groups
-        ? `Purposes you cannot take today stay on the list with the reason. ${ineligibleCount(groups)} of the twelve are closed to you right now.`
+        ? `Purposes you cannot take today stay on the list with the reason. ${ineligibleCount(groups)} of the ${allTypes(groups).length} are closed to you right now.`
         : ''
     "
     :can-continue="Boolean(draft.purpose)"
@@ -57,7 +58,7 @@ const ineligibleCount = (list) =>
             :key="type.code"
             type="button"
             :disabled="!type.eligible"
-            @click="choose(group, type)"
+            @click="choose(type)"
             class="flex flex-col gap-[7px] rounded-xl px-4 py-3.5 text-left transition-colors"
             :class="[
               draft.purpose?.code === type.code

@@ -108,6 +108,21 @@ sentence out of a 404, which on a blob request arrives as a `Blob` rather than J
 reached the member. Moved 2026-09-16. The four attachment reads in `api/me.js` return
 `{ blob, filename }` like the statement calls, so no view composes a filename of its own.
 
+**The advance form asks what the purpose asks, and the purpose says so.** Every purpose carries an
+`asks` array from `GET /me/loans/types`; `useLoanFields` reads it and nothing else. It used to be
+`draft.group === 'Housing'`, which is the trust's **eligibility** grouping and never said anything
+about property — true of the seven codes the master shipped with, and false the day `V0_0_111` added
+**code 06, Pension on Heigher Wages, to group A**. Three purposes look different for it: **02 asks when
+the house was finished and for none of the costs**, **13 asks for the lender and for no property**, and
+06 asks for neither although it is filed with the housing codes. The amount step's first question is
+worded from the same place (`costQuestion`) — it asked *"What will the flat cost in total?"* of a
+marriage, a hospital admission and a pre-retirement withdrawal alike. Switching purpose mid-flow drops
+the answers the new purpose does not ask for (`propertyFor` / `repaymentBankFor`), and the review step
+now shows the property and the lender back, which it never did: a member repaying a housing loan typed
+the account the money would go to and submitted without seeing it again. The API drops anything sent
+for a purpose that did not ask for it, so none of this is the only guard — but a field the member can
+neither see nor clear should not travel with their application.
+
 One screen still depends on backend data that is missing, and says so where a member would otherwise be
 misled:
 

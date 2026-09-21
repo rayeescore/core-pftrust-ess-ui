@@ -15,19 +15,26 @@ import { ref } from 'vue'
  * `documents` is keyed by the document NAME the checklist returned, because that is what the create
  * call sends back: the member-facing document record carries no id, for the same reason the purpose is
  * a code rather than a UUID.
+ *
+ * `purpose` is kept whole rather than reduced to a code, because it carries `asks` -- what the form
+ * for it has to put. See `useLoanFields`. The draft used to hold a `group` name alongside it and the
+ * details step branched on that; group is the trust's eligibility grouping and never said anything
+ * about what to ask, so it is gone rather than left here to be read again.
  */
 function empty() {
   return {
+    /** The whole purpose as the API returned it, `asks` included. Not just its code. */
     purpose: null,
-    /** The group the purpose came from — "Housing" is what decides whether the property block is asked. */
-    group: null,
     totalCost: '',
     requested: '',
     /** What the amount step worked out they will actually receive. Recomputed server-side on submit. */
     entitlement: null,
     contactNumber: '',
     emailId: '',
-    /** Housing purposes only. Null otherwise, and the API tolerates that now. */
+    /**
+     * The costs, or the completion date, for the purposes that ask. Null otherwise, and the API
+     * tolerates that -- and drops either half that this purpose did not ask for.
+     */
     property: null,
     /** Code 13 only, where the money goes to the lender rather than to the member. */
     repaymentBank: null,

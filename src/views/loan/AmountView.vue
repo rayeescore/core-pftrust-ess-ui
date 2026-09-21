@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as me from '@/api/me'
 import { useLoanDraft } from '@/composables/useLoanDraft'
+import { costQuestion } from '@/composables/useLoanFields'
 import LoanFlowLayout from '@/layouts/LoanFlowLayout.vue'
 import FormField from '@/components/ui/FormField.vue'
 import MoneyInput from '@/components/ui/MoneyInput.vue'
@@ -20,6 +21,9 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 const router = useRouter()
 const draft = useLoanDraft()
 const entitlement = ref(null)
+
+/** What "the total cost" means for this purpose, in words that fit it. */
+const cost = computed(() => costQuestion(draft.value.purpose))
 
 async function recalculate() {
   entitlement.value = await me.checkLoanEligibility({
@@ -56,11 +60,12 @@ const cappedNote = computed(() =>
     <div class="grid items-start gap-5 *:min-w-0 lg:grid-cols-[1.15fr_1fr]">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-5 rounded-card border border-border bg-surface px-6 py-[22px]">
-          <FormField
-            label="What will the flat cost in total?"
-            prefix="₹"
-            hint="Agreement value plus stamp duty, registration and anything else you are paying for."
-          >
+          <!--
+            Worded for the purpose. This asked "What will the flat cost in total?" of every purpose --
+            of a marriage, of a hospital admission, of a pre-retirement withdrawal -- as the first
+            question on the screen. See useLoanFields.costQuestion.
+          -->
+          <FormField :label="cost.label" prefix="₹" :hint="cost.hint">
             <MoneyInput v-model="draft.totalCost" />
           </FormField>
 
