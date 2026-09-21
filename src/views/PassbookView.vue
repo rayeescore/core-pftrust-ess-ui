@@ -7,11 +7,12 @@ import AppBanner from '@/components/ui/AppBanner.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import FinancialYearSelect from '@/components/ui/FinancialYearSelect.vue'
+import { ALL, NON_TAXABLE, TAXABLE, isHalf, rowFor, summaryFor } from '@/composables/usePassbookHalves'
 
 /**
  * The contribution passbook: every rupee in and out of the account, month by month.
  *
- * Three things here are decisions rather than layout, and all three come from how this system actually
+ * Four things here are decisions rather than layout, and all four come from how this system actually
  * works:
  *
  *  - **Month 0 is the opening balance, not a thirteenth month.** The API's month list is literally
@@ -22,17 +23,22 @@ import FinancialYearSelect from '@/components/ui/FinancialYearSelect.vue'
  *  - **The interest column is empty all year, on purpose**, and the page says so at the bottom. Interest
  *    is worked out once, after March. An empty column with no explanation reads as data that failed to
  *    load, which is the one reading that would send somebody to the PF department.
+ *  - **The taxable filter reaches every figure on the page**, summary and footer included, and it does
+ *    it by swapping which object each row is read from rather than by halving anything here. See
+ *    `usePassbookHalves`. It used to reach none of them: `taxView` was bound to the control and read by
+ *    nothing at all, so pressing Taxable moved the highlight and left every rupee where it was --
+ *    which on a financial screen is worse than having no filter, because the member believes it.
  */
 const year = ref(2027)
-const taxView = ref('all')
+const taxView = ref(ALL)
 const passbook = ref(null)
 const years = ref([2027])
 const { busy, failure, download } = useDownload()
 
 const taxViews = [
-  { value: 'all', label: 'All' },
-  { value: 'taxable', label: 'Taxable' },
-  { value: 'nonTaxable', label: 'Non-taxable' },
+  { value: ALL, label: 'All' },
+  { value: TAXABLE, label: 'Taxable' },
+  { value: NON_TAXABLE, label: 'Non-taxable' },
 ]
 
 async function load() {
@@ -50,7 +56,20 @@ watch(year, load)
 /** Eight columns, and the first is wider because it carries a month name and sometimes a sub-line. */
 const GRID = 'grid-cols-[1.5fr_0.95fr_1fr_1fr_0.95fr_0.9fr_1.05fr_1fr]'
 
-const rows = computed(() => passbook.value?.rows ?? [])
+/**
+ * The rows as the chosen view shows them, and the summary to match.
+ *
+ * Both go through the same pair of functions, so the table, the five figures above it and the footer
+ * total cannot end up reading different halves of the same year.
+ */
+const rows = computed(() => (passbook.value?.rows ?? []).map((row) => rowFor(row, taxView.value)))
+
+const summary = computed(() => summaryFor(passbook.value, taxView.value))
+
+/** Whether the member is looking at a half, and is therefore owed the note about the company share. */
+const filtered = computed(() => isHalf(taxView.value))
+
+const halfLabel = computed(() => (taxView.value === TAXABLE ? 'taxable' : 'non-taxable'))
 
 /**
  * Which month cards are open on a phone.
@@ -111,10 +130,10 @@ function toggle(key) {
       >
         <div
           v-for="cell in [
-            { label: `Opening · ${passbook.openingLabel}`, value: passbook.opening, sign: '' },
-            { label: 'Contributed', value: passbook.contributed, sign: '+ ' },
-            { label: 'Transferred in', value: passbook.transferredIn, sign: '+ ' },
-            { label: 'Withdrawn', value: passbook.withdrawn, sign: '− ' },
+            { label: `Opening · ${summary.openingLabel}`, value: summary.opening, sign: '' },
+            { label: 'Contributed', value: summary.contributed, sign: '+ ' },
+            { label: 'Transferred in', value: summary.transferredIn, sign: '+ ' },
+            { label: 'Withdrawn', value: summary.withdrawn, sign: '− ' },
           ]"
           :key="cell.label"
           class="flex flex-col gap-1 bg-surface px-[18px] py-4"
@@ -124,10 +143,10 @@ function toggle(key) {
         </div>
         <div class="flex flex-col gap-1 bg-brand-50 px-[18px] py-4">
           <p class="eyebrow" style="color: var(--color-brand-700)">
-            Balance · {{ passbook.closingLabel }}
+            {{ filtered ? `${halfLabel} balance` : 'Balance' }} · {{ summary.closingLabel }}
           </p>
           <p class="tabular text-[19px] font-semibold" style="color: var(--color-brand-700)">
-            ₹{{ money(passbook.closing) }}
+            ₹{{ money(summary.closing) }}
           </p>
         </div>
       </div>
@@ -224,13 +243,13 @@ function toggle(key) {
           </div>
 
           <div class="grid items-center gap-2.5 bg-surface-deep px-5 py-4" :class="GRID">
-            <p class="text-[13.5px] font-semibold">Balance on {{ displayDate(passbook.closingDate) }}</p>
+            <p class="text-[13.5px] font-semibold">Balance on {{ displayDate(summary.closingDate) }}</p>
             <p class="tabular text-right text-[13.5px] text-ink-faint">—</p>
-            <p class="tabular text-right text-[14.5px] font-semibold">{{ money(passbook.totals.member) }}</p>
-            <p class="tabular text-right text-[14.5px] font-semibold">{{ money(passbook.totals.company) }}</p>
-            <p class="tabular text-right text-[14.5px] font-semibold">{{ money(passbook.totals.vpf) }}</p>
+            <p class="tabular text-right text-[14.5px] font-semibold">{{ money(summary.totals.member) }}</p>
+            <p class="tabular text-right text-[14.5px] font-semibold">{{ money(summary.totals.company) }}</p>
+            <p class="tabular text-right text-[14.5px] font-semibold">{{ money(summary.totals.vpf) }}</p>
             <p class="tabular text-right text-[13.5px] text-ink-faintest">—</p>
-            <p class="tabular text-right text-[14.5px] font-semibold">{{ money(passbook.closing) }}</p>
+            <p class="tabular text-right text-[14.5px] font-semibold">{{ money(summary.closing) }}</p>
             <p />
           </div>
         </div>
@@ -337,16 +356,16 @@ function toggle(key) {
         <div class="rounded-xl border border-border bg-surface-deep px-4 py-3.5">
           <div class="flex items-center justify-between gap-3">
             <p class="text-[13.5px] font-semibold">
-              Balance on {{ displayDate(passbook.closingDate) }}
+              Balance on {{ displayDate(summary.closingDate) }}
             </p>
-            <p class="tabular shrink-0 text-[15px] font-semibold">₹{{ money(passbook.closing) }}</p>
+            <p class="tabular shrink-0 text-[15px] font-semibold">₹{{ money(summary.closing) }}</p>
           </div>
           <dl class="mt-3 flex gap-4 border-t border-border py-0 pt-3">
             <div
               v-for="part in [
-                { label: 'Yours', value: passbook.totals.member },
-                { label: 'Company', value: passbook.totals.company },
-                { label: 'VPF', value: passbook.totals.vpf },
+                { label: 'Yours', value: summary.totals.member },
+                { label: 'Company', value: summary.totals.company },
+                { label: 'VPF', value: summary.totals.vpf },
               ]"
               :key="part.label"
               class="flex flex-col gap-px"
@@ -357,6 +376,30 @@ function toggle(key) {
           </dl>
         </div>
       </div>
+
+      <!--
+        WHY THE COMPANY COLUMN IS EMPTY IN A HALF
+
+        Only while a half is showing, and above the interest note because it explains a blank the member
+        is looking at right now. The company's contribution carries no taxable classification in the
+        trust's books -- the rule classifies the member's own money -- so a half shows a dash for it
+        rather than a zero, and the figures in a half deliberately do not add up to the whole year.
+      -->
+      <aside
+        v-if="filtered"
+        class="flex items-start gap-3 rounded-xl border border-border bg-surface-sub px-[17px] py-3.5"
+      >
+        <AppIcon name="info" :size="18" class="mt-px text-ink-faint" />
+        <div class="flex flex-col gap-[3px]">
+          <p class="text-[13.5px] font-semibold">Company contribution is not shown in this view</p>
+          <p class="text-[13px] leading-[1.55] text-ink-muted">
+            The {{ halfLabel }} split applies to your own contribution and your VPF. Your company’s
+            contribution is not classified either way, so it shows a dash — the figures here are your
+            own money, and they are smaller than your full balance for that reason. Choose
+            <strong>All</strong> to see the whole account.
+          </p>
+        </div>
+      </aside>
 
       <!-- WHY THE INTEREST COLUMN IS EMPTY -->
       <aside class="flex items-start gap-3 rounded-xl border border-info-200 bg-info-50 px-[17px] py-3.5">

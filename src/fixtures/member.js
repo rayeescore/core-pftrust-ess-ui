@@ -146,6 +146,25 @@ export const passbook = {
   unpostedNote:
     'August to March are not posted yet. Payroll sends each month\u2019s contribution after it closes.',
   totals: { member: '1185120.00', company: '1275120.00', vpf: '320450.00' },
+  // Sunita is over the 2.5 lakh cap, so both halves carry figures. Note that neither carries a company
+  // total: the trust classifies the member's own money and not the company's, and a fixture that
+  // invented one would hide exactly the case the screen has to render as a dash.
+  taxable: {
+    opening: '82720.00',
+    contributed: '7200.00',
+    transferredIn: '13800.00',
+    withdrawn: '9000.00',
+    closing: '94720.00',
+    totals: { member: '66240.00', vpf: '28480.00' },
+  },
+  nonTaxable: {
+    opening: '1395500.00',
+    contributed: '48000.00',
+    transferredIn: '78350.00',
+    withdrawn: '81000.00',
+    closing: '1440850.00',
+    totals: { member: '1118880.00', vpf: '291970.00' },
+  },
   rows: [
     {
       key: 'opening',
@@ -155,6 +174,8 @@ export const passbook = {
       vpf: '338450.00',
       total: '2617990.00',
       postedOn: '01-04-2026',
+      taxable: { member: '55190.00', vpf: '27530.00', total: '82720.00' },
+      nonTaxable: { member: '1084580.00', vpf: '310920.00', total: '1395500.00' }
     },
     {
       key: 'apr',
@@ -166,6 +187,8 @@ export const passbook = {
       vpf: '3000.00',
       total: '24600.00',
       postedOn: '30-04-2026',
+      taxable: { member: '900.00', vpf: '900.00', total: '1800.00' },
+      nonTaxable: { member: '9900.00', vpf: '2100.00', total: '12000.00' }
     },
     {
       key: 'ti',
@@ -175,6 +198,8 @@ export const passbook = {
       detail: 'Yours ₹92,150 · Company ₹92,150',
       amount: '184300.00',
       postedOn: '22-04-2026',
+      taxable: { amount: '13800.00' },
+      nonTaxable: { amount: '78350.00' }
     },
     {
       key: 'may',
@@ -186,6 +211,8 @@ export const passbook = {
       vpf: '3000.00',
       total: '24600.00',
       postedOn: '31-05-2026',
+      taxable: { member: '900.00', vpf: '900.00', total: '1800.00' },
+      nonTaxable: { member: '9900.00', vpf: '2100.00', total: '12000.00' }
     },
     {
       key: 'jun',
@@ -197,6 +224,8 @@ export const passbook = {
       vpf: '3000.00',
       total: '24600.00',
       postedOn: '30-06-2026',
+      taxable: { member: '900.00', vpf: '900.00', total: '1800.00' },
+      nonTaxable: { member: '9900.00', vpf: '2100.00', total: '12000.00' }
     },
     {
       key: 'loan',
@@ -207,6 +236,8 @@ export const passbook = {
         'Yours −₹90,000 · VPF −₹30,000 · the company share is untouched by a medical advance',
       amount: '120000.00',
       postedOn: '30-06-2026',
+      taxable: { amount: '9000.00' },
+      nonTaxable: { amount: '81000.00' }
     },
     {
       key: 'jul',
@@ -218,6 +249,8 @@ export const passbook = {
       vpf: '3000.00',
       total: '24600.00',
       postedOn: '31-07-2026',
+      taxable: { member: '900.00', vpf: '900.00', total: '1800.00' },
+      nonTaxable: { member: '9900.00', vpf: '2100.00', total: '12000.00' }
     },
   ],
 }
