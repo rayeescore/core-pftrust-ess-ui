@@ -29,10 +29,23 @@ import { ALL, NON_TAXABLE, TAXABLE, isHalf, rowFor, summaryFor } from '@/composa
  *    nothing at all, so pressing Taxable moved the highlight and left every rupee where it was --
  *    which on a financial screen is worse than having no filter, because the member believes it.
  */
-const year = ref(2027)
+/**
+ * Which year to show is the API's answer, never a constant.
+ *
+ * Both of these were hardcoded to 2027, and the passbook then fetched 2027 whatever the member had.
+ * `watch(year, load)` cannot rescue that: `year` never changes, so the watcher never fires, and a
+ * native select whose value is absent from its options renders option zero instead. The member was
+ * shown "FY 2025-26" above a passbook fetched for 2027 -- every figure zero, the opening row's label
+ * undefined and "credited at %" with no rate, for an account that in fact held Rs 1,28,955.
+ *
+ * It survived because on a database carrying the full SAP backfill 2027 happens to exist, so the
+ * constant was right by accident for the only data anyone looked at. A tenant freshly loaded from SAP,
+ * or any member whose last contribution predates 2027, got an empty passbook.
+ */
+const year = ref(null)
 const taxView = ref(ALL)
 const passbook = ref(null)
-const years = ref([2027])
+const years = ref([])
 const { busy, failure, download } = useDownload()
 
 const taxViews = [
@@ -43,12 +56,20 @@ const taxViews = [
 
 async function load() {
   passbook.value = null
+
+  if (!year.value) {
+    return
+  }
+
   passbook.value = await me.getPassbook(year.value)
 }
 
 onMounted(async () => {
-  years.value = await me.getContributedYears()
-  await load()
+  years.value = (await me.getContributedYears()) ?? []
+  // Newest first -- MemberContributionController sorts them that way -- so the member opens on the
+  // year they are in. Assigning here is what triggers `watch(year, load)`; loading as well would
+  // fetch the same year twice.
+  year.value = years.value[0] ?? null
 })
 
 watch(year, load)
@@ -107,10 +128,17 @@ function toggle(key) {
 
       <div class="flex flex-wrap items-center gap-3">
         <SegmentedControl v-model="taxView" :options="taxViews" class="hidden sm:flex" />
-        <FinancialYearSelect v-model="year" :years="years" class="min-w-0 flex-1 sm:flex-none" />
+        <!-- Both wait for the year the API supplies: the select takes a required Number, and a
+             statement for a null year is a download that cannot succeed. -->
+        <FinancialYearSelect
+          v-if="year"
+          v-model="year"
+          :years="years"
+          class="min-w-0 flex-1 sm:flex-none"
+        />
         <button
           class="flex min-h-11 shrink-0 items-center gap-[9px] rounded-[10px] bg-action-fill px-[18px] py-[11px] text-sm font-semibold text-on-brand transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="busy !== null"
+          :disabled="busy !== null || !year"
           @click="download('monthly', () => me.getMonthlyStatement(year))"
         >
           <AppIcon name="download" :size="16" />
@@ -411,7 +439,12 @@ function toggle(key) {
           <p class="text-[13px] leading-[1.55]" style="color: oklch(0.45 0.06 250)">
             Interest is worked out once a year, after March, and added to your opening balance for the
             next year. It has not been missed — there is simply nothing to show until the year closes.
-            Last year it was credited at {{ passbook.lastRate }}%.
+            <!-- Only when there is a rate to name. A member whose first year this is has no previous
+                 one, and the sentence rendered as "credited at %." — which reads as a figure the page
+                 failed to load rather than a year that does not exist. -->
+            <template v-if="passbook.lastRate">
+              Last year it was credited at {{ passbook.lastRate }}%.
+            </template>
           </p>
         </div>
       </aside>
