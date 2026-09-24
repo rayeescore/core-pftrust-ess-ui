@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import * as me from '@/api/me'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import ChangeDiffRow from '@/components/product/ChangeDiffRow.vue'
+import ProofPicker from '@/components/product/ProofPicker.vue'
 
 /**
  * Asking the PF department to correct something.
@@ -13,9 +14,13 @@ import ChangeDiffRow from '@/components/product/ChangeDiffRow.vue'
  * request as a before-and-after diff, and this screen builds exactly that -- an item per field whose
  * proposed value differs from the one on record, and nothing else.
  *
- * Two rules are the server's and are mirrored here only so a member is not surprised by them: a request
- * that changes nothing is refused, and a nominee or bank change has to come with proof. The document
- * wording is the server's own, repeated so the button says what the refusal would have said.
+ * Three rules are the server's and are mirrored here only so a member is not surprised by them: a
+ * request that changes nothing is refused, a nominee or bank change has to come with proof, and the
+ * nominee shares have to come to 100% (or nobody at all). The wording is the server's own, repeated so
+ * the button says what the refusal would have said.
+ *
+ * **A request carries one file**, so a nominee change and a bank change go as two requests, each with
+ * the document asked for under its own section. Contact changes need no proof and ride with the first.
  *
  * The list of correctable fields is closed on purpose and matches `ChangeRequestField` on the server.
  * Name, PERN, PF number and date of birth are identity, and are absent from both.
@@ -48,10 +53,14 @@ const nominees = ref([])
 const addingNominee = ref(false)
 const newNominee = ref({ name: '', relationship: '', share: '' })
 const note = ref('')
-const file = ref(null)
-const fileInput = ref(null)
+const nomineeProof = ref(null)
+const bankProof = ref(null)
+/** Parts of the form already sent, so a retry after a half-failed send does not raise them twice. */
+const sent = ref(new Set())
 const busy = ref(false)
 const error = ref('')
+/** Said under the nominee list, where the mistake is, rather than beside a Send button a screen away. */
+const nomineeError = ref('')
 
 onMounted(async () => {
   const loaded = await me.getProfile()
@@ -145,40 +154,87 @@ const items = computed(() => {
 
 const touchesNominees = computed(() => items.value.some((item) => item.field === 'NOMINEE'))
 const touchesBank = computed(() => items.value.some((item) => item.field.startsWith('BANK_')))
-const needsProof = computed(() => touchesNominees.value || touchesBank.value)
+const standing = computed(() => nominees.value.filter((nominee) => !nominee.removed))
 
-/** The same wording the server refuses with, so the button never promises what the API will not do. */
-const proofWanted = computed(() =>
-  [touchesNominees.value && NOMINATION_FORM, touchesBank.value && CANCELLED_CHEQUE]
-    .filter(Boolean)
-    .join(', and '),
+/** A share is a plain number from 0 to 100 -- what the server accepts, checked before it refuses. */
+const isShare = (value) => /^\d+(\.\d{1,2})?$/.test(String(value).trim()) && Number(value) <= 100
+
+/** Rounded to the paise of a per cent, so 66.67 + 33.33 reads 100 and not 100.00000000000001. */
+const total = computed(
+  () =>
+    Math.round(standing.value.reduce((sum, nominee) => sum + Number(nominee.proposed || 0), 0) * 100) /
+    100,
 )
 
-const total = computed(() =>
-  nominees.value
-    .filter((nominee) => !nominee.removed)
-    .reduce((sum, nominee) => sum + Number(nominee.proposed || 0), 0),
-)
+const unassigned = computed(() => Math.max(0, Math.round((100 - total.value) * 100) / 100))
+
+/** Which share boxes are wrong on their own: blank, not a number, or above 100. */
+const badShare = (nominee) => !nominee.removed && !isShare(nominee.proposed)
+
+/**
+ * What is wrong with the nomination as it stands, if anything, in the order a member should fix it.
+ * Under 100 is not an error while they are still editing -- it is the "unassigned" note in the header --
+ * but it still holds the send, through whyNotYet.
+ */
+const sharesError = computed(() => {
+  if (standing.value.some(badShare)) return 'Each share is a number from 0 to 100.'
+  if (total.value > 100) {
+    return `The shares add up to ${total.value}%, more than the whole fund. Lower them so they come to exactly 100%.`
+  }
+  return ''
+})
+
+/**
+ * What will be sent, one request per document.
+ *
+ * Contact changes need no proof, so they join the first request rather than becoming a third. A part
+ * already sent is left out, which is what makes pressing Send again after a half-failed send safe.
+ */
+const requests = computed(() => {
+  const isNominee = (item) => item.field === 'NOMINEE'
+  const isBank = (item) => item.field.startsWith('BANK_')
+
+  const out = []
+
+  if (!sent.value.has('nominees')) {
+    const part = items.value.filter(isNominee)
+    if (part.length) out.push({ parts: ['nominees'], what: 'nominee change', items: part, file: nomineeProof.value })
+  }
+
+  if (!sent.value.has('bank')) {
+    const part = items.value.filter(isBank)
+    if (part.length) out.push({ parts: ['bank'], what: 'bank account change', items: part, file: bankProof.value })
+  }
+
+  if (!sent.value.has('contact')) {
+    const part = items.value.filter((item) => !isNominee(item) && !isBank(item))
+    if (part.length && out.length) {
+      out[0] = { ...out[0], parts: [...out[0].parts, 'contact'], items: [...part, ...out[0].items] }
+    } else if (part.length) {
+      out.push({ parts: ['contact'], what: 'contact change', items: part, file: null })
+    }
+  }
+
+  return out
+})
 
 const whyNotYet = computed(() => {
-  if (!items.value.length) return 'Nothing has changed yet.'
-  if (needsProof.value && !file.value) return `That change has to come with ${proofWanted.value}.`
+  if (!requests.value.length) return 'Nothing has changed yet.'
+
+  const nomineesPending = touchesNominees.value && !sent.value.has('nominees')
+
+  if (nomineesPending && sharesError.value) return sharesError.value
+  if (nomineesPending && standing.value.length && total.value !== 100) {
+    return `Your nominee shares come to ${total.value}%. Between them they need to come to exactly 100%.`
+  }
+  if (nomineesPending && !nomineeProof.value) return `Attach ${NOMINATION_FORM} under Nominees.`
+  if (touchesBank.value && !sent.value.has('bank') && !bankProof.value) {
+    return `Attach ${CANCELLED_CHEQUE} under the bank account.`
+  }
   return ''
 })
 
 const canSend = computed(() => !busy.value && !whyNotYet.value)
-
-function chooseFile() {
-  fileInput.value?.click()
-}
-
-function fileChosen(event) {
-  const chosen = event.target.files?.[0]
-  if (chosen) file.value = chosen
-  // Cleared so choosing the same file twice in a row still fires a change event -- which is exactly
-  // what a member does after a failed send.
-  event.target.value = ''
-}
 
 function addNominee() {
   const name = trimmed(newNominee.value.name)
@@ -188,12 +244,26 @@ function addNominee() {
   // All three. The relationship is not decoration: the trust's nominee record cannot be saved without
   // one, and the API refuses an addition that lacks it rather than letting approval fail.
   if (!name || !relationship || !share) {
-    error.value = 'A nominee needs a name, a relationship and a share.'
+    nomineeError.value = 'A nominee needs a name, a relationship and a share.'
     return
   }
 
   if (nominees.value.some((nominee) => nominee.name.toLowerCase() === name.toLowerCase())) {
-    error.value = `${name} is already a nominee -- change their share instead.`
+    nomineeError.value = `${name} is already a nominee -- change their share instead.`
+    return
+  }
+
+  if (!isShare(share) || Number(share) === 0) {
+    nomineeError.value = 'A share is a number above 0 and at most 100.'
+    return
+  }
+
+  // The whole fund is 100%, so a new nominee can only be given what nobody else holds yet.
+  if (Number(share) > unassigned.value) {
+    nomineeError.value =
+      unassigned.value > 0
+        ? `Only ${unassigned.value}% is unassigned. Give ${name} at most that, or lower another nominee's share first.`
+        : `The whole 100% is already assigned. Lower another nominee's share first to make room for ${name}.`
     return
   }
 
@@ -208,7 +278,13 @@ function addNominee() {
 
   newNominee.value = { name: '', relationship: '', share: '' }
   addingNominee.value = false
-  error.value = ''
+  nomineeError.value = ''
+}
+
+/** Closing the add row clears whatever it last complained about. */
+function toggleAdding() {
+  addingNominee.value = !addingNominee.value
+  nomineeError.value = ''
 }
 
 /** A nominee added on this screen simply goes; one on record is marked, and the mark can be undone. */
@@ -226,14 +302,21 @@ async function send() {
   busy.value = true
   error.value = ''
 
+  const sentNow = []
+
   try {
-    await me.createChangeRequest({ note: trimmed(note.value) || null, items: items.value }, file.value)
+    // One at a time, so a refusal stops the rest and says exactly which part went.
+    for (const request of requests.value) {
+      await me.createChangeRequest({ note: trimmed(note.value) || null, items: request.items }, request.file)
+      sent.value = new Set([...sent.value, ...request.parts])
+      sentNow.push(request.what)
+    }
     router.push('/profile')
   } catch (failure) {
     // The API's refusals are written to be read by the member -- a 400 carries its message intact --
     // so it is shown as sent rather than replaced with a generic sentence.
-    error.value =
-      failure.response?.data?.message ?? 'That did not go through. Try again in a moment.'
+    const reason = failure.response?.data?.message ?? 'That did not go through. Try again in a moment.'
+    error.value = sentNow.length ? `Your ${sentNow.join(' and ')} was sent. The rest was not: ${reason}` : reason
   } finally {
     busy.value = false
   }
@@ -273,17 +356,27 @@ async function send() {
           >
             <input
               v-model="contact[each.key]"
+              :disabled="sent.has('contact')"
               :inputmode="each.mono ? 'tel' : 'email'"
               class="w-full bg-transparent outline-none"
               :class="each.mono ? 'tabular' : ''"
             />
           </ChangeDiffRow>
 
-          <div class="flex flex-col gap-3 border-t border-border pt-5">
+          <fieldset :disabled="sent.has('nominees')" class="flex min-w-0 flex-col gap-3 border-t border-border pt-5">
             <div class="flex flex-wrap items-baseline justify-between gap-3">
               <p class="text-[13px] font-medium">Nominees</p>
-              <p class="text-[12px]" :class="total === 100 ? 'text-success-700' : 'text-warning-700'">
-                {{ total === 100 ? 'Fully assigned' : `${100 - total}% unassigned` }}
+              <p
+                class="text-[12px]"
+                :class="total === 100 ? 'text-success-700' : total > 100 ? 'text-danger-700' : 'text-warning-700'"
+              >
+                {{
+                  total === 100
+                    ? 'Fully assigned'
+                    : total > 100
+                      ? `${Math.round((total - 100) * 100) / 100}% over`
+                      : `${Math.round((100 - total) * 100) / 100}% unassigned`
+                }}
               </p>
             </div>
 
@@ -304,11 +397,13 @@ async function send() {
                 </span>
                 <div
                   v-if="!nominee.removed"
-                  class="flex min-h-[46px] w-24 items-center rounded-[10px] border border-brand-500 bg-surface px-3 [&>input]:min-h-11"
+                  class="flex min-h-[46px] w-24 items-center rounded-[10px] border bg-surface px-3 [&>input]:min-h-11"
+                  :class="badShare(nominee) || total > 100 ? 'border-danger-500' : 'border-brand-500'"
                 >
                   <input
                     v-model="nominee.proposed"
-                    inputmode="numeric"
+                    inputmode="decimal"
+                    :aria-invalid="badShare(nominee) || total > 100"
                     class="tabular w-full bg-transparent text-right outline-none"
                   />
                   <span class="ml-1 text-ink-muted">%</span>
@@ -352,7 +447,7 @@ async function send() {
                 <span class="text-[11.5px] text-ink-faint">Share</span>
                 <input
                   v-model="newNominee.share"
-                  inputmode="numeric"
+                  inputmode="decimal"
                   class="tabular min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-right text-base outline-none"
                 />
               </label>
@@ -369,7 +464,7 @@ async function send() {
               <button
                 type="button"
                 class="min-h-11 text-[12.5px] font-semibold text-brand-600"
-                @click="addingNominee = !addingNominee"
+                @click="toggleAdding"
               >
                 {{ addingNominee ? 'Never mind' : 'Add a nominee' }}
               </button>
@@ -377,15 +472,25 @@ async function send() {
                 <span class="text-[13px] text-ink-muted">Total</span>
                 <span
                   class="tabular text-sm font-semibold"
-                  :class="total === 100 ? 'text-success-700' : 'text-warning-700'"
+                  :class="total === 100 ? 'text-success-700' : total > 100 ? 'text-danger-700' : 'text-warning-700'"
                 >
                   {{ total }}%
                 </span>
               </p>
             </div>
-          </div>
 
-          <div class="flex flex-col gap-4 border-t border-border pt-5">
+            <p v-if="nomineeError || sharesError" role="alert" class="text-[12.5px] text-danger-700">
+              {{ nomineeError || sharesError }}
+            </p>
+
+            <p v-if="sent.has('nominees')" class="text-[12.5px] text-success-700">
+              Sent. It is on your profile while the PF department checks it.
+            </p>
+            <!-- One signed nomination form lists every nominee, so one document covers the lot. -->
+            <ProofPicker v-else-if="touchesNominees" v-model="nomineeProof" :document="NOMINATION_FORM" />
+          </fieldset>
+
+          <fieldset :disabled="sent.has('bank')" class="flex min-w-0 flex-col gap-4 border-t border-border pt-5">
             <div class="flex flex-wrap items-baseline justify-between gap-3">
               <p class="text-[13px] font-medium">Where money is paid</p>
               <p class="text-[12px] text-ink-faint">Leave a field blank to keep it as it is.</p>
@@ -404,37 +509,12 @@ async function send() {
                 placeholder="No change"
               />
             </ChangeDiffRow>
-          </div>
 
-          <!-- The server refuses a nominee or bank change without this, naming the document. The
-               picker appears the moment such a change is made, so a member never finds out by being
-               refused. -->
-          <div
-            v-if="needsProof"
-            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-strong bg-surface-sub px-4 py-3.5"
-          >
-            <div class="min-w-0">
-              <p class="text-[13.5px] font-medium">Proof for this change</p>
-              <p class="text-[11.5px] text-ink-muted">
-                Attach {{ proofWanted }}. A PDF or a photograph, up to 5 MB.
-              </p>
-            </div>
-            <button
-              type="button"
-              class="flex min-h-11 items-center gap-2 rounded-lg border border-border-strong bg-surface px-3.5 text-[12.5px] font-semibold transition-colors hover:bg-surface-sub"
-              @click="chooseFile"
-            >
-              <AppIcon :name="file ? 'check' : 'upload'" :size="14" />
-              <span class="max-w-[14rem] truncate">{{ file ? file.name : 'Attach' }}</span>
-            </button>
-            <input
-              ref="fileInput"
-              type="file"
-              class="hidden"
-              accept="application/pdf,image/jpeg,image/png"
-              @change="fileChosen"
-            />
-          </div>
+            <p v-if="sent.has('bank')" class="text-[12.5px] text-success-700">
+              Sent. It is on your profile while the PF department checks it.
+            </p>
+            <ProofPicker v-else-if="touchesBank" v-model="bankProof" :document="CANCELLED_CHEQUE" />
+          </fieldset>
 
           <div class="border-t border-border pt-5">
             <label class="mb-[7px] block text-[13px] font-medium">
@@ -475,7 +555,7 @@ async function send() {
 
         <!-- Beside the button that would fail, never in a toast. -->
         <p v-if="error" class="text-right text-[12.5px] text-danger-700">{{ error }}</p>
-        <p v-else-if="whyNotYet && items.length" class="text-right text-[12.5px] text-ink-muted">
+        <p v-else-if="whyNotYet && requests.length" class="text-right text-[12.5px] text-ink-muted">
           {{ whyNotYet }}
         </p>
       </div>
