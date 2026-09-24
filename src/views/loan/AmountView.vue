@@ -25,12 +25,32 @@ const entitlement = ref(null)
 /** What "the total cost" means for this purpose, in words that fit it. */
 const cost = computed(() => costQuestion(draft.value.purpose))
 
+/**
+ * Which request the panel is allowed to show.
+ *
+ * The watcher fires on every keystroke, so typing "60000" starts five overlapping requests and nothing
+ * ordered their replies: `entitlement.value` took whichever resolved last. Typing 60,000 settled the
+ * panel on "Amount you asked for ₹6,000" and left it there -- the entitlement for a figure the member
+ * never asked for, on the screen whose entire job is telling them what they may withdraw. Slower and
+ * earlier is the dangerous combination, and it gets likelier the longer the number.
+ */
+let latestRequest = 0
+
 async function recalculate() {
-  entitlement.value = await me.checkLoanEligibility({
+  const request = ++latestRequest
+
+  const result = await me.checkLoanEligibility({
     code: draft.value.purpose?.code,
     totalCost: draft.value.totalCost,
     requested: draft.value.requested,
   })
+
+  // A reply that has been overtaken is discarded rather than rendered.
+  if (request !== latestRequest) {
+    return
+  }
+
+  entitlement.value = result
   // Carried forward so the review step can show the figure the member is actually agreeing to without
   // asking again. The API recomputes it on submit regardless; this is what they saw, not what they get.
   draft.value.entitlement = entitlement.value?.amount ?? null
