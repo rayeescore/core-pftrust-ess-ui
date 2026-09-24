@@ -59,6 +59,8 @@ const bankProof = ref(null)
 const sent = ref(new Set())
 const busy = ref(false)
 const error = ref('')
+/** Said under the nominee list, where the mistake is, rather than beside a Send button a screen away. */
+const nomineeError = ref('')
 
 onMounted(async () => {
   const loaded = await me.getProfile()
@@ -154,12 +156,33 @@ const touchesNominees = computed(() => items.value.some((item) => item.field ===
 const touchesBank = computed(() => items.value.some((item) => item.field.startsWith('BANK_')))
 const standing = computed(() => nominees.value.filter((nominee) => !nominee.removed))
 
+/** A share is a plain number from 0 to 100 -- what the server accepts, checked before it refuses. */
+const isShare = (value) => /^\d+(\.\d{1,2})?$/.test(String(value).trim()) && Number(value) <= 100
+
 /** Rounded to the paise of a per cent, so 66.67 + 33.33 reads 100 and not 100.00000000000001. */
 const total = computed(
   () =>
     Math.round(standing.value.reduce((sum, nominee) => sum + Number(nominee.proposed || 0), 0) * 100) /
     100,
 )
+
+const unassigned = computed(() => Math.max(0, Math.round((100 - total.value) * 100) / 100))
+
+/** Which share boxes are wrong on their own: blank, not a number, or above 100. */
+const badShare = (nominee) => !nominee.removed && !isShare(nominee.proposed)
+
+/**
+ * What is wrong with the nomination as it stands, if anything, in the order a member should fix it.
+ * Under 100 is not an error while they are still editing -- it is the "unassigned" note in the header --
+ * but it still holds the send, through whyNotYet.
+ */
+const sharesError = computed(() => {
+  if (standing.value.some(badShare)) return 'Each share is a number from 0 to 100.'
+  if (total.value > 100) {
+    return `The shares add up to ${total.value}%, more than the whole fund. Lower them so they come to exactly 100%.`
+  }
+  return ''
+})
 
 /**
  * What will be sent, one request per document.
@@ -200,6 +223,7 @@ const whyNotYet = computed(() => {
 
   const nomineesPending = touchesNominees.value && !sent.value.has('nominees')
 
+  if (nomineesPending && sharesError.value) return sharesError.value
   if (nomineesPending && standing.value.length && total.value !== 100) {
     return `Your nominee shares come to ${total.value}%. Between them they need to come to exactly 100%.`
   }
@@ -220,12 +244,26 @@ function addNominee() {
   // All three. The relationship is not decoration: the trust's nominee record cannot be saved without
   // one, and the API refuses an addition that lacks it rather than letting approval fail.
   if (!name || !relationship || !share) {
-    error.value = 'A nominee needs a name, a relationship and a share.'
+    nomineeError.value = 'A nominee needs a name, a relationship and a share.'
     return
   }
 
   if (nominees.value.some((nominee) => nominee.name.toLowerCase() === name.toLowerCase())) {
-    error.value = `${name} is already a nominee -- change their share instead.`
+    nomineeError.value = `${name} is already a nominee -- change their share instead.`
+    return
+  }
+
+  if (!isShare(share) || Number(share) === 0) {
+    nomineeError.value = 'A share is a number above 0 and at most 100.'
+    return
+  }
+
+  // The whole fund is 100%, so a new nominee can only be given what nobody else holds yet.
+  if (Number(share) > unassigned.value) {
+    nomineeError.value =
+      unassigned.value > 0
+        ? `Only ${unassigned.value}% is unassigned. Give ${name} at most that, or lower another nominee's share first.`
+        : `The whole 100% is already assigned. Lower another nominee's share first to make room for ${name}.`
     return
   }
 
@@ -240,7 +278,13 @@ function addNominee() {
 
   newNominee.value = { name: '', relationship: '', share: '' }
   addingNominee.value = false
-  error.value = ''
+  nomineeError.value = ''
+}
+
+/** Closing the add row clears whatever it last complained about. */
+function toggleAdding() {
+  addingNominee.value = !addingNominee.value
+  nomineeError.value = ''
 }
 
 /** A nominee added on this screen simply goes; one on record is marked, and the mark can be undone. */
@@ -322,7 +366,10 @@ async function send() {
           <fieldset :disabled="sent.has('nominees')" class="flex min-w-0 flex-col gap-3 border-t border-border pt-5">
             <div class="flex flex-wrap items-baseline justify-between gap-3">
               <p class="text-[13px] font-medium">Nominees</p>
-              <p class="text-[12px]" :class="total === 100 ? 'text-success-700' : 'text-warning-700'">
+              <p
+                class="text-[12px]"
+                :class="total === 100 ? 'text-success-700' : total > 100 ? 'text-danger-700' : 'text-warning-700'"
+              >
                 {{
                   total === 100
                     ? 'Fully assigned'
@@ -350,11 +397,13 @@ async function send() {
                 </span>
                 <div
                   v-if="!nominee.removed"
-                  class="flex min-h-[46px] w-24 items-center rounded-[10px] border border-brand-500 bg-surface px-3 [&>input]:min-h-11"
+                  class="flex min-h-[46px] w-24 items-center rounded-[10px] border bg-surface px-3 [&>input]:min-h-11"
+                  :class="badShare(nominee) || total > 100 ? 'border-danger-500' : 'border-brand-500'"
                 >
                   <input
                     v-model="nominee.proposed"
-                    inputmode="numeric"
+                    inputmode="decimal"
+                    :aria-invalid="badShare(nominee) || total > 100"
                     class="tabular w-full bg-transparent text-right outline-none"
                   />
                   <span class="ml-1 text-ink-muted">%</span>
@@ -398,7 +447,7 @@ async function send() {
                 <span class="text-[11.5px] text-ink-faint">Share</span>
                 <input
                   v-model="newNominee.share"
-                  inputmode="numeric"
+                  inputmode="decimal"
                   class="tabular min-h-11 rounded-[10px] border border-border-strong bg-surface px-3 text-right text-base outline-none"
                 />
               </label>
@@ -415,7 +464,7 @@ async function send() {
               <button
                 type="button"
                 class="min-h-11 text-[12.5px] font-semibold text-brand-600"
-                @click="addingNominee = !addingNominee"
+                @click="toggleAdding"
               >
                 {{ addingNominee ? 'Never mind' : 'Add a nominee' }}
               </button>
@@ -423,12 +472,16 @@ async function send() {
                 <span class="text-[13px] text-ink-muted">Total</span>
                 <span
                   class="tabular text-sm font-semibold"
-                  :class="total === 100 ? 'text-success-700' : 'text-warning-700'"
+                  :class="total === 100 ? 'text-success-700' : total > 100 ? 'text-danger-700' : 'text-warning-700'"
                 >
                   {{ total }}%
                 </span>
               </p>
             </div>
+
+            <p v-if="nomineeError || sharesError" role="alert" class="text-[12.5px] text-danger-700">
+              {{ nomineeError || sharesError }}
+            </p>
 
             <p v-if="sent.has('nominees')" class="text-[12.5px] text-success-700">
               Sent. It is on your profile while the PF department checks it.

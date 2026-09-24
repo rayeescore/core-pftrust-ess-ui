@@ -116,14 +116,51 @@ describe('ChangeRequestView', () => {
     expect(second).toBe(cheque)
   })
 
-  it('holds the send while the shares do not come to 100%, and says what they come to', async () => {
+  it('refuses to add a nominee the fund has no room for, and says so under the nominees', async () => {
+    const wrapper = await mounted()
+    // Aarti still holds 100%, which is the state in the screenshot that prompted this.
+    await addPriya(wrapper, '50', '100')
+
+    const nomineeSection = wrapper.findAll('fieldset')[0]
+    expect(nomineeSection.text()).toContain('The whole 100% is already assigned')
+    expect(nomineeSection.text()).not.toContain('Priya Deshmukh · Daughter')
+    expect(me.createChangeRequest).not.toHaveBeenCalled()
+  })
+
+  it('offers only what is unassigned', async () => {
     const wrapper = await mounted()
     await addPriya(wrapper, '50', '60')
+
+    expect(wrapper.findAll('fieldset')[0].text()).toContain('Only 40% is unassigned')
+  })
+
+  it('flags a share edited past 100% in the section and holds the send', async () => {
+    const wrapper = await mounted()
+    await addPriya(wrapper)
     await attach(wrapper.findAll('fieldset')[0], nominationForm)
 
-    expect(wrapper.text()).toContain('Your nominee shares come to 110%')
-    expect(wrapper.text()).toContain('10% over')
+    // Aarti back up to 100 beside Priya's 40.
+    await wrapper.findAll('fieldset')[0].findAll('input')[0].setValue('100')
+
+    const nomineeSection = wrapper.findAll('fieldset')[0]
+    expect(nomineeSection.find('[role="alert"]').text()).toContain('The shares add up to 140%')
+    expect(nomineeSection.text()).toContain('40% over')
+    expect(nomineeSection.find('input[aria-invalid="true"]').exists()).toBe(true)
     expect(button(wrapper, 'Send the request').attributes('disabled')).toBeDefined()
+  })
+
+  it('flags a share that is not a number from 0 to 100', async () => {
+    const wrapper = await mounted()
+    await wrapper.findAll('fieldset')[0].findAll('input')[0].setValue('abc')
+
+    expect(wrapper.findAll('fieldset')[0].find('[role="alert"]').text()).toBe('Each share is a number from 0 to 100.')
+  })
+
+  it('refuses a new nominee with a share of 0 or over 100', async () => {
+    const wrapper = await mounted()
+    await addPriya(wrapper, '0', '60')
+
+    expect(wrapper.findAll('fieldset')[0].text()).toContain('A share is a number above 0 and at most 100.')
   })
 
   it('after a half-failed send, says what went and retries only the rest', async () => {
